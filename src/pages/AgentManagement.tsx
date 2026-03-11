@@ -28,6 +28,7 @@ import {
 } from 'tdesign-icons-react';
 import { formatCurrency } from '../utils/format';
 import logger from '../utils/logger';
+import { adminApi } from '../services/admin';
 
 // 代理类型
 const AgentType = {
@@ -61,98 +62,13 @@ export default function AgentManagement() {
   const fetchAgents = async () => {
     setLoading(true);
     try {
-      // TODO: 调用后端API
-      // 模拟数据
-      const mockAgents = [
-        {
-          id: 1,
-          agentCode: 'AGENT000001',
-          agentType: AgentType.TOTAL_AGENT,
-          agentTypeName: '总代理',
-          parentAgentCode: null,
-          username: 'agent001',
-          realName: '张总代',
-          phone: '138****0001',
-          email: 'agent001@example.com',
-          status: AgentStatus.NORMAL,
-          statusName: '正常',
-          commissionRate: 0.0030,
-          totalBalance: 158000.50,
-          availableBalance: 125000.00,
-          frozenBalance: 33000.50,
-          totalUsers: 156,
-          directSubAgents: 3,
-          totalTradingVolume: 5680000.00,
-          registerTime: '2024-01-15 10:30:00'
-        },
-        {
-          id: 2,
-          agentCode: 'AGENT000002',
-          agentType: AgentType.SUB_AGENT,
-          agentTypeName: '分代理',
-          parentAgentCode: 'AGENT000001',
-          parentAgentName: '张总代',
-          username: 'agent002',
-          realName: '李分代',
-          phone: '138****0002',
-          email: 'agent002@example.com',
-          status: AgentStatus.NORMAL,
-          statusName: '正常',
-          commissionRate: 0.0015,
-          totalBalance: 45200.00,
-          availableBalance: 35000.00,
-          frozenBalance: 10200.00,
-          totalUsers: 68,
-          directSubAgents: 0,
-          totalTradingVolume: 1250000.00,
-          registerTime: '2024-01-20 14:20:00'
-        },
-        {
-          id: 3,
-          agentCode: 'AGENT000003',
-          agentType: AgentType.TOTAL_AGENT,
-          agentTypeName: '总代理',
-          parentAgentCode: null,
-          username: 'agent003',
-          realName: '王总代',
-          phone: '138****0003',
-          email: 'agent003@example.com',
-          status: AgentStatus.NORMAL,
-          statusName: '正常',
-          commissionRate: 0.0025,
-          totalBalance: 89000.00,
-          availableBalance: 65000.00,
-          frozenBalance: 24000.00,
-          totalUsers: 89,
-          directSubAgents: 2,
-          totalTradingVolume: 3200000.00,
-          registerTime: '2024-01-18 09:10:00'
-        },
-        {
-          id: 4,
-          agentCode: 'AGENT000004',
-          agentType: AgentType.SUB_AGENT,
-          agentTypeName: '分代理',
-          parentAgentCode: 'AGENT000003',
-          parentAgentName: '王总代',
-          username: 'agent004',
-          realName: '赵分代',
-          phone: '138****0004',
-          email: 'agent004@example.com',
-          status: AgentStatus.PENDING,
-          statusName: '审核中',
-          commissionRate: 0.0010,
-          totalBalance: 0.00,
-          availableBalance: 0.00,
-          frozenBalance: 0.00,
-          totalUsers: 0,
-          directSubAgents: 0,
-          totalTradingVolume: 0.00,
-          registerTime: '2024-02-23 08:00:00'
-        }
-      ];
-
-      setAgents(mockAgents);
+      const result = await adminApi.agent.getList({
+        page: 1,
+        pageSize: 50,
+        level: filterType ? parseInt(filterType) : undefined,
+        status: filterStatus ? parseInt(filterStatus) : undefined
+      });
+      setAgents(result?.list || []);
     } catch (error) {
       logger.error('获取代理列表失败:', error);
     } finally {
@@ -163,8 +79,7 @@ export default function AgentManagement() {
   // 创建代理
   const handleCreateAgent = async (values: any) => {
     try {
-      // TODO: 调用后端API
-      logger.debug('创建代理:', values);
+      await adminApi.agent.create(values);
       setCreateModal(false);
       form.reset();
       fetchAgents();
@@ -182,8 +97,7 @@ export default function AgentManagement() {
   // 切换状态
   const handleToggleStatus = async (agentId: number, status: number) => {
     try {
-      // TODO: 调用后端API
-      logger.debug('切换代理状态:', agentId, status);
+      await adminApi.agent.update(String(agentId), { status });
       fetchAgents();
     } catch (error) {
       logger.error('切换状态失败:', error);

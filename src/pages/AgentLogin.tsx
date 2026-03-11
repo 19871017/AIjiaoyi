@@ -1,37 +1,13 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input, Button, Checkbox, MessagePlugin } from 'tdesign-react';
 import { UserIcon, LockOnIcon, ShopIcon, ChartIcon } from 'tdesign-icons-react';
-
-// 模拟数据 - 用于测试
-const mockAgents = [
-  {
-    agentId: 1,
-    agentCode: 'AG001',
-    agentType: 1,
-    username: 'agent001',
-    realName: '测试总代理',
-    phone: '13800138001',
-    totalBalance: 10000.00,
-    availableBalance: 8000.00
-  },
-  {
-    agentId: 2,
-    agentCode: 'AG002',
-    agentType: 2,
-    username: 'agent002',
-    realName: '测试分代理',
-    phone: '13800138002',
-    totalBalance: 5000.00,
-    availableBalance: 4500.00
-  }
-];
+import { adminApi } from '../services/admin';
 
 export default function AgentLogin() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [useMockData, setUseMockData] = useState(false); // 模拟数据模式
   const [form, setForm] = useState({
     username: '',
     password: ''
@@ -50,11 +26,6 @@ export default function AgentLogin() {
       setRememberMe(true);
     }
 
-    // 检查是否启用了模拟模式
-    const mockMode = localStorage.getItem('useMockAgentLogin');
-    if (mockMode === 'true') {
-      setUseMockData(true);
-    }
   }, []);
 
   // 提交登录
@@ -70,39 +41,23 @@ export default function AgentLogin() {
 
     setLoading(true);
     try {
-      let loginData;
+      // 真实 API 登录
+      const response = await fetch('/admin/agent/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: form.username,
+          password: form.password
+        })
+      });
 
-      if (useMockData) {
-        // 模拟登录模式
-        const agent = mockAgents.find(a => a.username === form.username);
-        if (!agent) {
-          throw new Error('用户名或密码错误');
-        }
-
-        loginData = {
-          code: 0,
-          message: '登录成功',
-          data: agent
-        };
-      } else {
-        // 真实 API 登录
-        const response = await fetch('/api/agent/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            username: form.username,
-            password: form.password
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('登录请求失败');
-        }
-
-        loginData = await response.json();
+      if (!response.ok) {
+        throw new Error('登录请求失败');
       }
+
+      const loginData = await response.json();
 
       if (loginData.code === 0) {
         const { agentId, agentCode, agentType, username, realName, phone, totalBalance, availableBalance } = loginData.data;
@@ -138,19 +93,7 @@ export default function AgentLogin() {
       }
     } catch (error: any) {
       console.error('登录失败:', error);
-
-      if (useMockData) {
-        MessagePlugin.error(error.message || '用户名或密码错误');
-      } else {
-        // 真实 API 登录失败时，提示是否切换到模拟模式
-        if (confirm(`登录失败：${error.message}\n\n是否切换到模拟登录模式进行测试？\n\n模拟账号：\nagent001 / agent123\nagent002 / agent123`)) {
-          setUseMockData(true);
-          localStorage.setItem('useMockAgentLogin', 'true');
-          MessagePlugin.success('已切换到模拟登录模式');
-        } else {
-          MessagePlugin.error(error.message || '登录失败，请检查用户名和密码');
-        }
-      }
+      MessagePlugin.error(error.message || '登录失败，请检查用户名和密码');
     } finally {
       setLoading(false);
     }
@@ -264,11 +207,8 @@ export default function AgentLogin() {
             <span className="text-xl font-bold text-white">代理管理系统</span>
           </div>
 
-          {/* 模拟模式提示 */}
-          {useMockData && (
             <div className="mb-4 p-3 bg-yellow-900/30 border border-yellow-600/50 rounded-lg">
               <p className="text-yellow-300 text-xs text-center">
-                ⚠️ 当前为模拟登录模式（仅用于测试）
               </p>
             </div>
           )}
@@ -282,7 +222,6 @@ export default function AgentLogin() {
             </div>
 
             {/* 快速填充测试账号 */}
-            {useMockData && (
               <div className="mb-6 p-4 bg-emerald-900/20 border border-emerald-700/50 rounded-lg">
                 <p className="text-emerald-300 text-xs mb-3 font-medium">点击快速填充测试账号：</p>
                 <div className="flex gap-2">
@@ -339,29 +278,13 @@ export default function AgentLogin() {
                 />
               </div>
 
-              {/* 模拟模式开关 */}
               <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={useMockData}
-                  onChange={(val) => {
-                    setUseMockData(val as boolean);
-                    localStorage.setItem('useMockAgentLogin', String(val));
-                  }}
-                  className="!text-slate-400 text-xs"
-                >
-                  使用模拟数据模式（测试用）
-                </Checkbox>
+                
               </div>
 
               {/* 记住我 */}
               <div className="flex items-center justify-between">
-                <Checkbox
-                  checked={rememberMe}
-                  onChange={(val) => setRememberMe(val as boolean)}
-                  className="!text-slate-400 text-xs"
-                >
-                  记住用户名
-                </Checkbox>
+                
               </div>
 
               {/* 登录按钮 */}
@@ -420,3 +343,8 @@ export default function AgentLogin() {
     </div>
   );
 }
+
+
+
+
+
