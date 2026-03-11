@@ -220,6 +220,33 @@ router.post('/withdraw', authenticateUser, async (req: express.Request, res: exp
 });
 
 // ====================================================
+// 获取用户账户信息
+// ====================================================
+
+/**
+ * 获取账户余额信息
+ */
+router.get('/account', authenticateUser, async (req: express.Request, res: express.Response) => {
+  try {
+    const { userId } = req.query;
+
+    if (!userId) {
+      return res.status(400).json(createErrorResponse(ErrorCode.MISSING_PARAM));
+    }
+
+    const account = await getAccount(Number(userId));
+    if (!account) {
+      return res.status(404).json(createErrorResponse(ErrorCode.RESOURCE_NOT_FOUND, '账户不存在'));
+    }
+
+    res.json(createSuccessResponse(account, '获取成功'));
+  } catch (error) {
+    logger.error('[Finance] 获取账户信息失败:', error);
+    res.status(500).json(createErrorResponse(ErrorCode.INTERNAL_ERROR, '获取账户信息失败'));
+  }
+});
+
+// ====================================================
 // 获取用户财务记录
 // ====================================================
 

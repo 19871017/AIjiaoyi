@@ -15,6 +15,7 @@ import { createShuhaiRouter } from './routes/shuhai';
 import authRouter from './routes/auth';
 import adminRouter from './routes/admin';
 import aiRouter from './routes/ai';
+import financeRouter from './routes/finance';
 
 dotenv.config();
 
@@ -22,7 +23,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: true,
     credentials: true
   }
 });
@@ -37,7 +38,7 @@ app.use(helmet());
 
 // CORS
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: true,
   credentials: true
 }));
 
@@ -163,6 +164,9 @@ app.use('/admin', adminRouter);
 
 // AI分析路由
 app.use('/ai', aiRouter);
+
+// 资金路由
+app.use('/finance', financeRouter);
 
 // API 路由
 app.use('/api', createApiRouter(orderManager, positionManager, riskManager, marketService));

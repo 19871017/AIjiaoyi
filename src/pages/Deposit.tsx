@@ -19,34 +19,7 @@ import {
   TimeIcon,
 } from 'tdesign-icons-react';
 import logger from '../utils/logger';
-
-// 模拟充值记录
-const mockDepositRecords = [
-  {
-    id: 1,
-    type: 'bank',
-    amount: 10000,
-    status: 'completed',
-    method: '工商银行 ****8888',
-    createdAt: '2026-02-24 14:30:25',
-  },
-  {
-    id: 2,
-    type: 'usdt',
-    amount: 5000,
-    status: 'completed',
-    method: 'USDT-TRC20',
-    createdAt: '2026-02-23 09:15:10',
-  },
-  {
-    id: 3,
-    type: 'alipay',
-    amount: 3000,
-    status: 'pending',
-    method: '支付宝',
-    createdAt: '2026-02-24 16:45:30',
-  },
-];
+import { createDeposit, getFinanceRecords } from '../services/finance';
 
 const Deposit = () => {
   const navigate = useNavigate();
@@ -57,7 +30,7 @@ const Deposit = () => {
     paymentMethod: 'bank',
   });
   const [selectedBank, setSelectedBank] = useState('icbc');
-  const [records, setRecords] = useState(mockDepositRecords);
+  const [records, setRecords] = useState<any[]>([]);
   const [successDialog, setSuccessDialog] = useState(false);
   const [depositResult, setDepositResult] = useState<any>(null);
 
@@ -81,12 +54,17 @@ const Deposit = () => {
     loadDepositRecords();
   }, []);
 
-  const loadDepositRecords = () => {
+  const loadDepositRecords = async () => {
     setLoading(true);
-    // 模拟 API 调用
-    setTimeout(() => {
+    try {
+      const result = await getFinanceRecords({ type: 'deposit', page: 1, pageSize: 20 });
+      setRecords(result.list || []);
+    } catch (error) {
+      logger.error('获取充值记录失败:', error);
+      MessagePlugin.error('获取充值记录失败');
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   const handleSubmit = async () => {
@@ -109,26 +87,20 @@ const Deposit = () => {
     setSubmitting(true);
 
     try {
-      // 模拟 API 调用
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // 创建充值记录
-      const newRecord = {
-        id: Date.now(),
-        type: formValue.paymentMethod,
+      const result = await createDeposit({
         amount,
-        status: 'pending',
-        method: getPaymentMethodName(formValue.paymentMethod),
-        createdAt: new Date().toLocaleString('zh-CN'),
-      };
+        method: formValue.paymentMethod,
+        bankName: formValue.paymentMethod === 'bank' ? getPaymentMethodName(formValue.paymentMethod) : undefined,
+        bankAccount: formValue.paymentMethod === 'bank' ? selectedBank : undefined,
+      });
 
-      setRecords([newRecord, ...records]);
+      await loadDepositRecords();
 
       // 显示成功弹窗
       setDepositResult({
         amount,
         method: getPaymentMethodName(formValue.paymentMethod),
-        orderNo: `DP${Date.now()}`,
+        orderNo: result.record_number || result.id || `DP${Date.now()}`,
       });
       setSuccessDialog(true);
 
