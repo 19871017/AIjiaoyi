@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Card,
@@ -27,181 +27,37 @@ import {
   LockOnIcon
 } from 'tdesign-icons-react';
 import { formatCurrency, formatPrice } from '../utils/format';
+import { adminApi } from '../services/admin';
 
-// 模拟数据
-const mockUsers = [
-  {
-    id: 1,
-    username: 'user001',
-    realName: '张三',
-    email: 'zhangsan@example.com',
-    phone: '138****1234',
-    balance: 125000.00,
-    frozen: 5000.00,
-    profit: 15000.00,
-    agentLevel: 0,
-    status: 'active',
-    registerTime: '2024-01-15 10:30:00',
-    lastLogin: '2024-02-23 09:15:00'
-  },
-  {
-    id: 2,
-    username: 'user002',
-    realName: '李四',
-    email: 'lisi@example.com',
-    phone: '139****5678',
-    balance: 88000.00,
-    frozen: 2000.00,
-    profit: -5200.00,
-    agentLevel: 1,
-    status: 'active',
-    registerTime: '2024-01-18 14:20:00',
-    lastLogin: '2024-02-22 16:45:00'
-  },
-  {
-    id: 3,
-    username: 'user003',
-    realName: '王五',
-    email: 'wangwu@example.com',
-    phone: '137****9012',
-    balance: 250000.00,
-    frozen: 15000.00,
-    profit: 45000.00,
-    agentLevel: 2,
-    status: 'active',
-    registerTime: '2024-01-20 09:10:00',
-    lastLogin: '2024-02-23 08:30:00'
-  }
-];
-
-const mockOrders = [
-  {
-    id: 'ORD202402230001',
-    username: 'user001',
-    symbol: 'XAUUSD',
-    symbolName: '国际黄金',
-    type: 'buy',
-    orderType: 'market',
-    volume: 0.5,
-    price: 2035.50,
-    leverage: 10,
-    margin: 10177.50,
-    takeProfit: 2050.00,
-    stopLoss: 2020.00,
-    status: 'open',
-    profit: 1250.00,
-    createTime: '2024-02-23 10:15:30',
-    updateTime: '2024-02-23 11:30:00'
-  },
-  {
-    id: 'ORD202402230002',
-    username: 'user002',
-    symbol: 'XAGUSD',
-    symbolName: '国际白银',
-    type: 'sell',
-    orderType: 'limit',
-    volume: 1.0,
-    price: 22.85,
-    leverage: 20,
-    margin: 1142.50,
-    takeProfit: 22.00,
-    stopLoss: 23.50,
-    status: 'open',
-    profit: -280.00,
-    createTime: '2024-02-23 09:45:00',
-    updateTime: '2024-02-23 11:30:00'
-  },
-  {
-    id: 'ORD202402230003',
-    username: 'user003',
-    symbol: 'AU2406',
-    symbolName: '沪金主力',
-    type: 'buy',
-    orderType: 'market',
-    volume: 2.0,
-    price: 505.80,
-    leverage: 10,
-    margin: 10116.00,
-    takeProfit: 515.00,
-    stopLoss: 495.00,
-    status: 'closed',
-    profit: 8400.00,
-    createTime: '2024-02-22 15:30:00',
-    updateTime: '2024-02-23 10:20:00'
-  }
-];
-
-const mockTransactions = [
-  {
-    id: 'TXN202402230001',
-    username: 'user001',
-    type: 'deposit',
-    amount: 50000.00,
-    method: 'bank',
-    status: 'completed',
-    fee: 0,
-    remark: '银行卡充值',
-    createTime: '2024-02-23 08:00:00',
-    approvedBy: 'admin',
-    approvedTime: '2024-02-23 08:15:00'
-  },
-  {
-    id: 'TXN202402230002',
-    username: 'user002',
-    type: 'withdraw',
-    amount: 30000.00,
-    method: 'bank',
-    status: 'pending',
-    fee: 50,
-    remark: '提现申请',
-    createTime: '2024-02-23 09:00:00',
-    approvedBy: null,
-    approvedTime: null
-  },
-  {
-    id: 'TXN202402230003',
-    username: 'user003',
-    type: 'deposit',
-    amount: 100000.00,
-    method: 'usdt',
-    status: 'completed',
-    fee: 0,
-    remark: 'USDT充值',
-    createTime: '2024-02-22 14:30:00',
-    approvedBy: 'admin',
-    approvedTime: '2024-02-22 15:00:00'
-  }
-];
-
-export default function Admin() {
+export default function Admin() {\n  useEffect(() => {\n    const loadData = async () => {\n      try {\n        const stats = await adminApi.dashboard.getStats();\n        setStats({\n          totalUsers: stats.total_users ?? 0,\n          activeUsers: stats.active_users ?? 0,\n          totalAgents: stats.total_agents ?? 0,\n          todayOrders: stats.today_orders ?? 0,\n          openPositions: stats.open_positions ?? 0,\n          totalVolume: stats.total_volume ?? 0,\n          totalBalance: stats.total_balance ?? 0,\n          todayProfit: stats.today_profit ?? 0\n        });\n\n        const usersResult = await adminApi.user.getList({ page: 1, pageSize: 20 });\n        setUsers(usersResult.list || []);\n\n        const ordersResult = await adminApi.order.getList({ page: 1, pageSize: 20 });\n        setOrders(ordersResult.list || []);\n\n        const financeResult = await adminApi.finance.getList({ page: 1, pageSize: 20 });\n        setTransactions(financeResult.list || []);\n      } catch (error) {\n        Message.error('加载后台数据失败');\n      }\n    };\n\n    loadData();\n  }, []);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
 
   // 仪表盘数据
   const [stats, setStats] = useState({
-    totalUsers: 1256,
-    activeUsers: 890,
-    totalAgents: 45,
-    todayOrders: 342,
-    openPositions: 156,
-    totalVolume: 56800000,
-    totalBalance: 158000000,
-    todayProfit: 285000
+    totalUsers: 0,
+    activeUsers: 0,
+    totalAgents: 0,
+    todayOrders: 0,
+    openPositions: 0,
+    totalVolume: 0,
+    totalBalance: 0,
+    todayProfit: 0
   });
 
   // 用户管理
-  const [users, setUsers] = useState(mockUsers);
+  const [users, setUsers] = useState<any[]>([]);
   const [userSearch, setUserSearch] = useState('');
   const [userModal, setUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
   // 订单管理
-  const [orders, setOrders] = useState(mockOrders);
+  const [orders, setOrders] = useState<any[]>([]);
   const [orderSearch, setOrderSearch] = useState('');
   const [orderStatusFilter, setOrderStatusFilter] = useState('');
 
   // 财务管理
-  const [transactions, setTransactions] = useState(mockTransactions);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [txnFilter, setTxnFilter] = useState('');
 
   // 系统设置
@@ -882,3 +738,5 @@ export default function Admin() {
     </div>
   );
 }
+
+
