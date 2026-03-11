@@ -7,10 +7,10 @@ import ReactECharts from 'echarts-for-react';
 import { getQuoteBySymbol, getKlineBySymbol } from '../services/shuhai-backend.service';
 import { socketService } from '../services/socket.service';
 import logger from '../utils/logger';
-import { mockOrders } from '../data/mockData';
 import { formatPrice, formatCurrency } from '../utils/format';
 import { Position as PositionType, Order } from '../types';
 import { generateSymbolStrategy, SymbolStrategy } from '../services/ai-analysis.service';
+import api from '../services/api';
 
 // 格式化函数
 const formatPercent = (value: number): string => {
@@ -79,49 +79,66 @@ export default function Market() {
 
   // 模拟账户数据
   const [account, setAccount] = useState({
-    totalAssets: 850000.00,
-    availableFunds: 263560.00,
-    frozenMargin: 586440.00,
-    dailyPL: 12500.00,
-    cumulativePL: 45680.00
+    totalAssets: 0,
+    availableFunds: 0,
+    frozenMargin: 0,
+    dailyPL: 0,
+    cumulativePL: 0
   });
 
   // 我的订单数据 - 从 localStorage 加载
-  const [orders, setOrders] = useState<Order[]>(() => {
-    try {
-      const saved = localStorage.getItem('trading_orders');
-      return saved ? JSON.parse(saved) : mockOrders;
-    } catch {
-      return mockOrders;
-    }
-  });
+  const [orders, setOrders] = useState<Order[]>([]);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [aiStrategy, setAiStrategy] = useState<SymbolStrategy | null>(null);
 
   // 我的持仓数据 - 从 localStorage 加载
-  const [positions, setPositions] = useState<PositionType[]>(() => {
-    try {
-      const saved = localStorage.getItem('trading_positions');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [positions, setPositions] = useState<PositionType[]>([]);
 
   // 订单/持仓标签页
   const [activeTab, setActiveTab] = useState<'orders' | 'positions'>('orders');
 
-  // 保存订单到 localStorage
+  // 加载真实账户/订单/持仓
   useEffect(() => {
-    localStorage.setItem('trading_orders', JSON.stringify(orders));
-  }, [orders]);
+    const loadData = async () => {
+      try {
+        const [accountInfo, orderList, positionList] = await Promise.all([
+          api.account.getInfo(),
+          api.order.getList(),
+          api.position.getList()
+        ]);
 
-  // 保存持仓到 localStorage
-  useEffect(() => {
-    localStorage.setItem('trading_positions', JSON.stringify(positions));
-  }, [positions]);
+        setAccount({
+          totalAssets: accountInfo.totalBalance ?? 0,
+          availableFunds: accountInfo.availableBalance ?? 0,
+          frozenMargin: accountInfo.frozenMargin ?? 0,
+          dailyPL: accountInfo.unrealizedPnl ?? 0,
+          cumulativePL: accountInfo.realizedPnl ?? 0
+        });
+        setOrders(orderList || []);
+        setPositions((positionList || []).map((p: any) => ({
+          id: p.positionId,
+          symbol: p.productCode,
+          name: p.productName || p.productCode,
+          direction: (p.direction || '').toLowerCase(),
+          openTime: p.openedAt || p.createdAt || '',
+          openPrice: p.entryPrice,
+          currentPrice: p.currentPrice || p.entryPrice,
+          quantity: p.quantity,
+          leverage: p.leverage,
+          margin: p.marginUsed || p.margin,
+          profitLoss: p.unrealizedPnl || 0,
+          stopLoss: p.stopLoss,
+          takeProfit: p.takeProfit
+        })));
+      } catch (error) {
+        logger.error('加载账户/订单/持仓失败:', error);
+      }
+    };
+
+    loadData();
+  }, []);
 
   // 实时更新持仓盈亏
   useEffect(() => {
@@ -1076,7 +1093,7 @@ export default function Market() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-neutral-950 pb-20 pt-2">
+    <div className="finance-app min-h-screen bg-gradient-to-b from-black to-neutral-950 pb-20 pt-2">
       <div className="max-w-7xl mx-auto px-2">
         {/* Header */}
         <header className="flex justify-between items-center mb-2 py-1">

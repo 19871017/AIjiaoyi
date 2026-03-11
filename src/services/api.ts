@@ -4,15 +4,17 @@
 
 // 从环境变量读取API地址，默认localhost
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
-const USER_ID = 'demo-user';
 
 // 统一请求封装
+import { getToken } from './auth';
+
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
+  const token = getToken();
   const response = await fetch(`${API_BASE_URL}${url}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      'user-id': USER_ID,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options?.headers
     }
   });

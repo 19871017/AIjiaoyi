@@ -3,9 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 import { Card, Dialog, MessagePlugin } from 'tdesign-react';
 import { InfoCircleIcon, TrendingUpIcon, WalletIcon, SettingIcon, CloseIcon } from 'tdesign-icons-react';
 import ReactECharts from 'echarts-for-react';
-import { mockPositions, mockAccount, mockOrders, mockClosedPositions } from '../data/mockData';
 import { formatPrice, formatCurrency } from '../utils/format';
 import { Position as PositionType, ClosedPosition } from '../types';
+import api from '../services/api';
 
 // 统一的消息提示函数
 const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
@@ -18,25 +18,16 @@ export default function Position() {
   const [currentPage, setCurrentPage] = useState(1);
   const [closedCurrentPage, setClosedCurrentPage] = useState(1);
 
-  // 从 localStorage 加载持仓和订单数据
-  const [positions, setPositions] = useState<Position[]>(() => {
-    try {
-      const saved = localStorage.getItem('trading_positions');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
+  const [positions, setPositions] = useState<PositionType[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [closedPositions, setClosedPositions] = useState<ClosedPosition[]>([]);
+  const [account, setAccount] = useState<any>({
+    totalAssets: 0,
+    availableFunds: 0,
+    frozenMargin: 0,
+    dailyPL: 0,
+    cumulativePL: 0
   });
-  const [orders, setOrders] = useState(() => {
-    try {
-      const saved = localStorage.getItem('trading_orders');
-      return saved ? JSON.parse(saved) : mockOrders;
-    } catch {
-      return mockOrders;
-    }
-  });
-  const [closedPositions, setClosedPositions] = useState(mockClosedPositions);
-  const [account, setAccount] = useState(mockAccount);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [showHedgeDialog, setShowHedgeDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -47,48 +38,49 @@ export default function Position() {
   // 盈亏历史记录（用于绘制趋势图）
   const [profitHistory, setProfitHistory] = useState<{ time: string; profit: number }[]>([]);
 
-  // 同步数据到 localStorage
+  // 加载真实数据
   useEffect(() => {
-    localStorage.setItem('trading_positions', JSON.stringify(positions));
-  }, [positions]);
+    const loadData = async () => {
+      try {
+        const [accountInfo, positionList, orderList] = await Promise.all([
+          api.account.getInfo(),
+          api.position.getList(),
+          api.order.getList()
+        ]);
 
-  useEffect(() => {
-    localStorage.setItem('trading_orders', JSON.stringify(orders));
-  }, [orders]);
-
-  // 模拟实时数据更新
-  useEffect(() => {
-    const timer = setInterval(() => {
-      // 更新持仓盈亏
-      setPositions(prev => {
-        const updatedPositions = prev.map(pos => {
-          const priceChange = (Math.random() - 0.5) * 0.5;
-          const newPrice = pos.currentPrice * (1 + priceChange / 100);
-          const profitChange = (newPrice - pos.currentPrice) * pos.quantity * (pos.direction === 'long' ? 1 : -1);
-          return {
-            ...pos,
-            currentPrice: newPrice,
-            profitLoss: pos.profitLoss + profitChange
-          };
+        setAccount({
+          totalAssets: accountInfo.totalBalance ?? 0,
+          availableFunds: accountInfo.availableBalance ?? 0,
+          frozenMargin: accountInfo.frozenMargin ?? 0,
+          dailyPL: accountInfo.unrealizedPnl ?? 0,
+          cumulativePL: accountInfo.realizedPnl ?? 0
         });
 
-        // 计算当前总盈亏
-        const totalProfit = updatedPositions.reduce((sum, p) => sum + p.profitLoss, 0);
+        setPositions((positionList || []).map((p: any) => ({
+          id: p.positionId,
+          symbol: p.productCode,
+          name: p.productName || p.productCode,
+          direction: (p.direction || '').toLowerCase(),
+          openTime: p.openedAt || p.createdAt || '',
+          openPrice: p.entryPrice,
+          currentPrice: p.currentPrice || p.entryPrice,
+          quantity: p.quantity,
+          leverage: p.leverage,
+          margin: p.marginUsed || p.margin,
+          profitLoss: p.unrealizedPnl || 0,
+          stopLoss: p.stopLoss,
+          takeProfit: p.takeProfit
+        })));
 
-        // 记录盈亏历史
-        const now = new Date();
-        const timeLabel = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+        setOrders(orderList || []);
+        setClosedPositions([]);
+      } catch (error) {
+        logger.error('加载持仓/订单失败:', error);
+        showToast('加载持仓/订单失败', 'error');
+      }
+    };
 
-        setProfitHistory(prev => {
-          const newHistory = [...prev, { time: timeLabel, profit: totalProfit }];
-          // 只保留最近30个数据点
-          return newHistory.slice(-30);
-        });
-
-        return updatedPositions;
-      });
-    }, 3000);
-    return () => clearInterval(timer);
+    loadData();
   }, []);
 
   // 计算保证金占用率和风险等级
@@ -104,8 +96,8 @@ export default function Position() {
 
   // 历史订单分页
   const orderPageSize = 8;
-  const totalPages = Math.ceil(orders.length / orderPageSize);
-  const currentOrders = orders.slice((currentPage - 1) * orderPageSize, currentPage * orderPageSize);
+  const totalPages = Math.ceil((orders.length || 0) / orderPageSize);
+  const currentOrders = (orders || []).slice((currentPage - 1) * orderPageSize, currentPage * orderPageSize);
 
   // 平仓记录分页 - 每页10条
   const closedPageSize = 10;
@@ -185,33 +177,16 @@ export default function Position() {
     if (!selectedOrder) return;
 
     try {
-      // 调用后端API取消订单
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/order/cancel', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ orderId: selectedOrder.id })
-      });
-
-      const result = await response.json();
-
-      if (result.code === 0) {
-        // 更新本地订单状态
-        setOrders(prev => prev.map(order =>
-          order.id === selectedOrder.id
-            ? { ...order, status: 'cancelled' }
-            : order
-        ));
-        showToast(`已取消订单 ${selectedOrder.id}`, 'success');
-      } else {
-        showToast(`取消失败: ${result.message}`, 'error');
-      }
-    } catch (err) {
+      const result = await api.order.cancel(selectedOrder.id);
+      setOrders(prev => prev.map(order =>
+        order.id === selectedOrder.id
+          ? { ...order, status: 'cancelled' }
+          : order
+      ));
+      showToast(`已取消订单 ${result.orderId}`, 'success');
+    } catch (err: any) {
       logger.error('取消订单失败:', err);
-      showToast('取消订单失败，请稍后重试', 'error');
+      showToast(err.message || '取消订单失败，请稍后重试', 'error');
     }
 
     setShowCancelDialog(false);
@@ -484,7 +459,7 @@ export default function Position() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-neutral-950 pb-20 pt-2">
+    <div className="finance-app min-h-screen bg-gradient-to-b from-black to-neutral-950 pb-20 pt-2">
       <div className="max-w-7xl mx-auto px-3">
         {/* Header */}
         <header className="flex justify-between items-center mb-4 py-2">
