@@ -255,13 +255,7 @@ export async function createOrder(data: CreateOrderData) {
       ]
     );
 
-    // 16. 解冻保证金
-    await client.query(
-      `UPDATE accounts
-       SET frozen_margin = frozen_margin - $1
-       WHERE user_id = $2`,
-      [margin, data.user_id]
-    );
+    // 16. 保持保证金冻结至平仓
 
     // 17. 更新Redis缓存
     await redis.set(`order:${orderId}:info`, JSON.stringify({
@@ -298,10 +292,10 @@ export async function closePosition(data: ClosePositionData) {
   return await transaction(async (client) => {
     // 1. 获取持仓信息
     const position = await client.query(
-      `SELECT p.*, prod.symbol, prod.tick_value
+      `SELECT p.*, prod.symbol, prod.tick_value, prod.contract_size
        FROM positions p
        JOIN products prod ON p.product_id = prod.id
-       WHERE p.id = $1 AND p.user_id = $2 AND p.status = $2`,
+       WHERE p.id = $1 AND p.user_id = $2 AND p.status = 1`,
       [data.position_id, data.user_id]
     );
 
@@ -392,8 +386,9 @@ export async function closePosition(data: ClosePositionData) {
       );
     }
 
-    // 9. 更新账户余额
-    await updateAccountBalance(client, data.user_id, pos.margin + netProfit, 6, pos.id);
+    // 9. 更新账户余额（按比例释放保证金）
+    const releasedMargin = pos.margin * (closeLotSize / pos.lot_size);
+    await updateAccountBalance(client, data.user_id, releasedMargin + netProfit, 6, pos.id);
 
     // 10. 创建成交记录
     await client.query(
@@ -533,8 +528,10 @@ async function riskCheck(
  */
 export async function updatePositionPrices(): Promise<void> {
   const positions = await query(
-    `SELECT p.id, p.user_id, p.product_id, p.direction, p.lot_size, p.entry_price, p.leverage, p.margin, p.stop_loss, p.take_profit
+    `SELECT p.id, p.user_id, p.product_id, p.direction, p.lot_size, p.entry_price, p.leverage, p.margin, p.stop_loss, p.take_profit,
+            prod.contract_size
      FROM positions p
+     JOIN products prod ON p.product_id = prod.id
      WHERE p.status = 1`
   );
 
@@ -543,12 +540,12 @@ export async function updatePositionPrices(): Promise<void> {
 
     if (!currentPrice) continue;
 
-    // 计算浮动盈亏
+    // 计算浮动盈亏（使用产品合约大小）
     let floatingPl: number;
     if (pos.direction === OrderDirection.LONG) {
-      floatingPl = (currentPrice - pos.entry_price) * pos.lot_size * 100; // 假设合约大小100
+      floatingPl = (currentPrice - pos.entry_price) * pos.lot_size * pos.contract_size;
     } else {
-      floatingPl = (pos.entry_price - currentPrice) * pos.lot_size * 100;
+      floatingPl = (pos.entry_price - currentPrice) * pos.lot_size * pos.contract_size;
     }
 
     // 更新持仓
