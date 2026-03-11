@@ -55,44 +55,6 @@ const menuItems = [
   { key: 'settings', icon: <SettingIcon size="20px" />, label: '系统设置' }
 ];
 
-// 模拟数据
-const mockDashboardData = {
-  stats: [
-    { title: '总用户数', value: '12,568', change: '+12.5%', icon: UserIcon, color: '#667eea' },
-    { title: '活跃用户', value: '8,902', change: '+8.3%', icon: UserIcon, color: '#764ba2' },
-    { title: '今日订单', value: '3,428', change: '+15.7%', icon: ShopIcon, color: '#f093fb' },
-    { title: '持仓订单', value: '1,256', change: '-3.2%', icon: ChartIcon, color: '#f5576c' },
-    { title: '总交易量', value: '¥5,680万', change: '+22.1%', icon: WalletIcon, color: '#4facfe' },
-    { title: '平台资金', value: '¥1.58亿', change: '+18.9%', icon: WalletIcon, color: '#00f2fe' }
-  ],
-  recentOrders: [
-    { id: 'ORD001', user: 'user001', symbol: 'XAUUSD', type: 'buy', volume: 0.5, profit: 1250, time: '10:30:25' },
-    { id: 'ORD002', user: 'user002', symbol: 'XAGUSD', type: 'sell', volume: 1.0, profit: -280, time: '10:28:15' },
-    { id: 'ORD003', user: 'user003', symbol: 'AU2406', type: 'buy', volume: 2.0, profit: 8400, time: '10:25:40' },
-    { id: 'ORD004', user: 'user001', symbol: 'XPTUSD', type: 'sell', volume: 0.3, profit: -520, time: '10:22:18' }
-  ],
-  pendingDeposits: 3,
-  pendingWithdrawals: 5
-};
-
-const mockUsers = [
-  { id: 1, username: 'user001', realName: '张三', phone: '138****1234', balance: 125000, profit: 15000, level: 0, status: 'active', registerTime: '2024-01-15' },
-  { id: 2, username: 'user002', realName: '李四', phone: '139****5678', balance: 88000, profit: -5200, level: 1, status: 'active', registerTime: '2024-01-18' },
-  { id: 3, username: 'user003', realName: '王五', phone: '137****9012', balance: 250000, profit: 45000, level: 2, status: 'active', registerTime: '2024-01-20' }
-];
-
-const mockOrders = [
-  { id: 'ORD202402230001', user: 'user001', symbol: 'XAUUSD', symbolName: '国际黄金', type: 'buy', volume: 0.5, price: 2035.5, leverage: 10, margin: 10177.5, profit: 1250, status: 'open', time: '2024-02-23 10:15:30' },
-  { id: 'ORD202402230002', user: 'user002', symbol: 'XAGUSD', symbolName: '国际白银', type: 'sell', volume: 1.0, price: 22.85, leverage: 20, margin: 1142.5, profit: -280, status: 'open', time: '2024-02-23 09:45:00' },
-  { id: 'ORD202402230003', user: 'user003', symbol: 'AU2406', symbolName: '沪金主力', type: 'buy', volume: 2.0, price: 505.8, leverage: 10, margin: 10116, profit: 8400, status: 'closed', time: '2024-02-22 15:30:00' }
-];
-
-const mockFinance = [
-  { id: 'TXN001', user: 'user001', type: 'deposit', amount: 50000, method: 'bank', status: 'completed', time: '2024-02-23 08:00:00' },
-  { id: 'TXN002', user: 'user002', type: 'withdraw', amount: 30000, method: 'bank', status: 'pending', time: '2024-02-23 09:00:00' },
-  { id: 'TXN003', user: 'user003', type: 'deposit', amount: 100000, method: 'usdt', status: 'completed', time: '2024-02-22 14:30:00' }
-];
-
 export default function AdminPC() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -111,6 +73,14 @@ export default function AdminPC() {
   const [commissionRecords, setCommissionRecords] = useState<any[]>([]);
   const [commissionStats, setCommissionStats] = useState<any>({});
   const [loading, setLoading] = useState(false);
+
+  const [dashboardStats, setDashboardStats] = useState<any[]>([]);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [pendingDeposits, setPendingDeposits] = useState(0);
+  const [pendingWithdrawals, setPendingWithdrawals] = useState(0);
+  const [users, setUsers] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [finance, setFinance] = useState<any[]>([]);
 
   // 手续费设置状态
   const [feeSettings, setFeeSettings] = useState({
@@ -182,9 +152,79 @@ export default function AdminPC() {
     }
   };
 
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      const stats = await adminApi.dashboard.getStats();
+      setDashboardStats([
+        { title: '总用户数', value: `${stats.total_users ?? 0}`, change: stats.users_growth || '+0%', icon: UserIcon, color: '#667eea' },
+        { title: '活跃用户', value: `${stats.active_users ?? 0}`, change: stats.active_growth || '+0%', icon: UserIcon, color: '#764ba2' },
+        { title: '今日订单', value: `${stats.today_orders ?? 0}`, change: stats.today_orders_growth || '+0%', icon: ShopIcon, color: '#f093fb' },
+        { title: '持仓订单', value: `${stats.open_positions ?? 0}`, change: stats.positions_growth || '+0%', icon: ChartIcon, color: '#f5576c' },
+        { title: '总交易量', value: `¥${(stats.total_volume ?? 0).toLocaleString()}`, change: stats.volume_growth || '+0%', icon: WalletIcon, color: '#4facfe' },
+        { title: '平台资金', value: `¥${(stats.total_balance ?? 0).toLocaleString()}`, change: stats.balance_growth || '+0%', icon: WalletIcon, color: '#00f2fe' }
+      ]);
+
+      const pending = await adminApi.dashboard.getPending();
+      setPendingDeposits(pending.pending_deposits ?? 0);
+      setPendingWithdrawals(pending.pending_withdrawals ?? 0);
+
+      const recent = await adminApi.order.getList({ page: 1, pageSize: 8 });
+      setRecentOrders(recent.list || []);
+    } catch (error) {
+      Message.error('加载仪表盘失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadUsersData = async () => {
+    try {
+      setLoading(true);
+      const data = await adminApi.user.getList({ page: 1, pageSize: 20 });
+      setUsers(data?.list || []);
+    } catch (error) {
+      Message.error('加载用户列表失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadOrdersData = async () => {
+    try {
+      setLoading(true);
+      const data = await adminApi.order.getList({ page: 1, pageSize: 20 });
+      setOrders(data?.list || []);
+    } catch (error) {
+      Message.error('加载订单列表失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadFinanceData = async () => {
+    try {
+      setLoading(true);
+      const data = await adminApi.finance.getList({ page: 1, pageSize: 20 });
+      setFinance(data?.list || []);
+    } catch (error) {
+      Message.error('加载财务列表失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 加载各模块数据
   useEffect(() => {
-    if (activeMenu === 'products') {
+    if (activeMenu === 'dashboard') {
+      loadDashboardData();
+    } else if (activeMenu === 'users') {
+      loadUsersData();
+    } else if (activeMenu === 'orders') {
+      loadOrdersData();
+    } else if (activeMenu === 'finance') {
+      loadFinanceData();
+    } else if (activeMenu === 'products') {
       loadProductsData();
     } else if (activeMenu === 'agents') {
       loadAgentsData();
@@ -236,7 +276,7 @@ export default function AdminPC() {
     <div className="space-y-6">
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
-        {mockDashboardData.stats.map((stat, index) => (
+        {dashboardStats.map((stat, index) => (
           <Card key={index} className="!border-0 !shadow-sm hover:!shadow-md transition-shadow">
             <div className="p-5">
               <div className="flex items-start justify-between mb-3">
@@ -264,14 +304,14 @@ export default function AdminPC() {
                 <WalletIcon size="20px" className="text-blue-600" />
                 <span className="text-gray-700">待审核充值</span>
               </div>
-              <Badge count={mockDashboardData.pendingDeposits} theme="primary" />
+              <Badge count={pendingDeposits} theme="primary" />
             </div>
             <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
               <div className="flex items-center gap-3">
                 <WalletIcon size="20px" className="text-orange-600" />
                 <span className="text-gray-700">待审核提现</span>
               </div>
-              <Badge count={mockDashboardData.pendingWithdrawals} theme="warning" />
+              <Badge count={pendingWithdrawals} theme="warning" />
             </div>
           </div>
         </Card>
@@ -341,7 +381,7 @@ export default function AdminPC() {
             },
             { colKey: 'time', title: '时间', width: 120 }
           ]}
-          data={mockDashboardData.recentOrders}
+          data={recentOrders}
           stripe
           hover
           size="small"
@@ -413,7 +453,7 @@ export default function AdminPC() {
             )
           }
         ]}
-        data={mockUsers}
+        data={users}
         stripe
         hover
         size="small"
@@ -496,7 +536,7 @@ export default function AdminPC() {
             )
           }
         ]}
-        data={mockOrders}
+        data={orders}
         stripe
         hover
         size="small"
@@ -580,7 +620,7 @@ export default function AdminPC() {
             )
           }
         ]}
-        data={mockFinance}
+        data={finance}
         stripe
         hover
         size="small"

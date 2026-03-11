@@ -1,6 +1,6 @@
 // 后台管理API服务
 
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
 // 获取token
 const getToken = (): string | null => {

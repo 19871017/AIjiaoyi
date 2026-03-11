@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Card,
@@ -18,58 +18,39 @@ import {
   ChartIcon,
   WalletIcon
 } from 'tdesign-icons-react';
+import { adminApi } from '../services/admin';
 
 export default function AdminLite() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  const mockUsers = [
-    {
-      id: 1,
-      username: 'user001',
-      realName: '张三',
-      phone: '138****1234',
-      balance: 125000.00,
-      profit: 15000.00,
-      agentLevel: 0,
-      status: 'active',
-      registerTime: '2024-01-15 10:30:00'
-    },
-    {
-      id: 2,
-      username: 'user002',
-      realName: '李四',
-      phone: '139****5678',
-      balance: 88000.00,
-      profit: -5200.00,
-      agentLevel: 1,
-      status: 'active',
-      registerTime: '2024-01-18 14:20:00'
-    }
-  ];
+  const [users, setUsers] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [dashboardStats, setDashboardStats] = useState<any[]>([]);
 
-  const mockOrders = [
-    {
-      id: 'ORD202402230001',
-      username: 'user001',
-      symbolName: '国际黄金',
-      type: 'buy',
-      volume: 0.5,
-      price: 2035.50,
-      leverage: 10,
-      margin: 10177.50,
-      profit: 1250.00,
-      status: 'open',
-      createTime: '2024-02-23 10:15:30'
-    }
-  ];
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const stats = await adminApi.dashboard.getStats();
+        setDashboardStats([
+          { title: '总用户数', value: stats.total_users ?? 0, icon: UserIcon, color: '#fbbf24' },
+          { title: '今日订单', value: stats.today_orders ?? 0, icon: ShopIcon, color: '#3b82f6' },
+          { title: '持仓数', value: stats.open_positions ?? 0, icon: ChartIcon, color: '#a855f7' },
+          { title: '平台资金', value: `¥${(stats.total_balance ?? 0).toLocaleString()}`, icon: WalletIcon, color: '#06b6d4' }
+        ]);
 
-  const dashboardStats = [
-    { title: '总用户数', value: '1,256', icon: UserIcon, color: '#fbbf24' },
-    { title: '今日订单', value: '342', icon: ShopIcon, color: '#3b82f6' },
-    { title: '持仓数', value: '156', icon: ChartIcon, color: '#a855f7' },
-    { title: '平台资金', value: '¥1.58亿', icon: WalletIcon, color: '#06b6d4' }
-  ];
+        const userResult = await adminApi.user.getList({ page: 1, pageSize: 10 });
+        setUsers(userResult.list || []);
+
+        const orderResult = await adminApi.order.getList({ page: 1, pageSize: 10 });
+        setOrders(orderResult.list || []);
+      } catch (error) {
+        Message.error('加载数据失败');
+      }
+    };
+
+    loadData();
+  }, []);
 
   const userColumns = [
     { colKey: 'id', title: 'ID', width: 80 },
@@ -165,14 +146,14 @@ export default function AdminLite() {
           <Tabs.TabPanel value="users" label="用户管理">
             <Card className="!bg-neutral-900 !border-neutral-800">
               <h3 className="text-base font-semibold text-white mb-4">用户列表</h3>
-              <Table columns={userColumns} data={mockUsers} stripe hover size="small" />
+              <Table columns={userColumns} data={users} stripe hover size="small" />
             </Card>
           </Tabs.TabPanel>
 
           <Tabs.TabPanel value="orders" label="订单管理">
             <Card className="!bg-neutral-900 !border-neutral-800">
               <h3 className="text-base font-semibold text-white mb-4">订单列表</h3>
-              <Table columns={orderColumns} data={mockOrders} stripe hover size="small" />
+              <Table columns={orderColumns} data={orders} stripe hover size="small" />
             </Card>
           </Tabs.TabPanel>
 
