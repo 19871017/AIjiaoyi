@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Dialog, Input, Button, MessagePlugin } from 'tdesign-react';
 import { LockOnIcon, InfoCircleIcon } from 'tdesign-icons-react';
+import { changePassword, getUser } from '../../services/auth';
 
 interface ChangePasswordDialogProps {
   visible: boolean;
@@ -70,8 +71,18 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
     setSubmitting(true);
 
     try {
-      // 模拟 API 调用
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const user = getUser();
+      if (!user) {
+        MessagePlugin.error('未登录');
+        return;
+      }
+
+      await changePassword({
+        username: user.username,
+        oldPassword: formValue.oldPassword,
+        newPassword: formValue.newPassword,
+        securityCode: formValue.securityCode
+      });
 
       // 调用保存回调
       onSave();

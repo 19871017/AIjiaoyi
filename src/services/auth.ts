@@ -24,29 +24,6 @@ export interface RegisterResponse {
 
 // 登录API
 export async function login(username: string, password: string): Promise<LoginResponse> {
-  // 开发模式: 演示登录,任何用户名密码都可以登录
-  if (import.meta.env.DEV) {
-    const demoUser: UserInfo = {
-      id: 'demo-user-001',
-      username: username,
-      role: 'USER',
-      realName: '演示用户',
-      phone: '13800138000',
-      email: `${username}@demo.com`,
-    };
-
-    const demoToken = 'demo-token-' + Date.now();
-
-    localStorage.setItem('token', demoToken);
-    localStorage.setItem('user', JSON.stringify(demoUser));
-
-    return {
-      token: demoToken,
-      user: demoUser,
-    };
-  }
-
-  // 生产模式: 调用真实API
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: {
@@ -72,6 +49,7 @@ export async function login(username: string, password: string): Promise<LoginRe
 export async function register(params: {
   username: string;
   password: string;
+  securityCode: string;
   phone?: string;
   email?: string;
   agentCode?: string;
@@ -91,6 +69,28 @@ export async function register(params: {
   }
 
   return result.data;
+}
+
+// 修改密码（旧密码 + 安全码）
+export async function changePassword(params: {
+  username: string;
+  oldPassword: string;
+  newPassword: string;
+  securityCode: string;
+}): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(params)
+  });
+
+  const result = await response.json();
+
+  if (result.code !== 0) {
+    throw new Error(result.message || '修改密码失败');
+  }
 }
 
 // 获取当前用户
