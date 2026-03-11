@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { Card } from 'tdesign-react';
 import { SoundIcon, CalendarIcon, WalletIcon, ChartIcon } from 'tdesign-icons-react';
 import TechNoticeBar from '../components/TechNoticeBar';
-import { mockAnnouncements } from '../data/mockData';
 import { formatPrice, formatPercent, formatVolume } from '../utils/format';
 import { getQuoteBySymbol } from '../services/shuhai-backend.service';
 import { getAISummary, AISummary } from '../services/ai-analysis.service';
 import wsService, { WebSocketMessage } from '../services/websocket.service';
 import logger from '../utils/logger';
+import { getAnnouncements } from '../services/announcement';
 
 // 数海API支持的品种列表（只有这6个品种有数据）
 const MARKET_SYMBOLS = [
@@ -37,7 +37,7 @@ export default function Home() {
   const navigate = useNavigate();
   const [marketData, setMarketData] = useState<MarketItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [announcements] = useState(mockAnnouncements);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
   const [, setAISummary] = useState<AISummary | null>(null);
   const [, setLoadingAISummary] = useState(false);
   const [isConnected, setIsConnected] = useState(false); // 连接状态
@@ -192,8 +192,21 @@ export default function Home() {
     loadAISummary();
   }, []);
 
+  // 加载公告
+  useEffect(() => {
+    const loadAnnouncements = async () => {
+      try {
+        const list = await getAnnouncements();
+        setAnnouncements(list || []);
+      } catch (error) {
+        logger.error('加载公告失败:', error);
+      }
+    };
+    loadAnnouncements();
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-neutral-950 pb-20 pt-2">
+    <div className="finance-app min-h-screen bg-gradient-to-b from-black to-neutral-950 pb-20 pt-2">
       <div className="max-w-7xl mx-auto px-3">
         {/* Header - 极简专业 */}
         <header className="flex justify-between items-center mb-3 py-2">

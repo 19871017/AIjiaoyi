@@ -320,6 +320,28 @@ CREATE TABLE withdraw_orders (
 
 CREATE INDEX idx_withdraw_orders_user_status ON withdraw_orders(user_id, status, created_at DESC);
 
+-- 银行卡
+CREATE TABLE bank_cards (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    bank_name VARCHAR(100) NOT NULL,
+    card_number VARCHAR(32) NOT NULL,
+    holder_name VARCHAR(50) NOT NULL,
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_bank_cards_user_id ON bank_cards(user_id);
+
+-- 公告
+CREATE TABLE announcements (
+    id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    content TEXT NOT NULL,
+    status SMALLINT DEFAULT 1, -- 1:启用 0:停用
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_announcements_status ON announcements(status);
+
 -- ====================================================
 -- 五、代理与分佣模块
 -- ====================================================

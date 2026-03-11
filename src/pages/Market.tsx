@@ -343,50 +343,13 @@ export default function Market() {
           setKLineData(formattedData);
         }
       } else {
-        logger.warn('K线数据为空，使用模拟数据');
-        generateMockKLineData();
+        logger.warn('K线数据为空');
+        setKLineData([]);
       }
     } catch (error) {
       logger.error('获取 K 线数据失败:', error);
-      // 使用模拟数据作为后备
-      generateMockKLineData();
+      setKLineData([]);
     }
-  };
-
-  // 生成模拟 K 线数据
-  const generateMockKLineData = () => {
-    const selectedData = marketData.find(item => item.symbol === selectedSymbol) || marketData[0];
-    const data: any[] = [];
-    let basePrice = selectedData.price;
-    const periods = {
-      '1m': 60, '5m': 300, '15m': 900, '30m': 1800,
-      '1h': 3600, '4h': 14400, '1d': 86400, '1w': 604800,
-      '1M': 2592000, // 月线 (30天)
-      '1Y': 31536000 // 年线 (365天)
-    };
-    const periodSeconds = periods[timePeriod as keyof typeof periods] || 3600;
-
-    // 生成最近 100 条数据，从当前时间往前推
-    const now = Date.now();
-    for (let i = 100; i >= 0; i--) {
-      const time = now - i * periodSeconds * 1000;
-      const open = basePrice;
-      const close = basePrice * (1 + (Math.random() - 0.5) * 0.008);
-      const high = Math.max(open, close) * (1 + Math.random() * 0.003);
-      const low = Math.min(open, close) * (1 - Math.random() * 0.003);
-      data.push([
-        time,
-        parseFloat(open.toFixed(2)),
-        parseFloat(close.toFixed(2)),
-        parseFloat(low.toFixed(2)),
-        parseFloat(high.toFixed(2))
-      ]);
-      basePrice = close;
-    }
-    // 按时间升序排序（从旧到新）
-    const sortedData = data.sort((a, b) => a[0] - b[0]);
-    logger.debug('模拟 K线数据:', sortedData.length, '条，时间范围:', sortedData[0][0], '-', sortedData[sortedData.length - 1][0]);
-    setKLineData(sortedData);
   };
 
   // 计算保证金（保证金 = 价格 × 手数 ÷ 杠杆）

@@ -17,26 +17,7 @@ import {
   CheckCircleIcon,
 } from 'tdesign-icons-react';
 import logger from '../utils/logger';
-
-// 模拟银行卡数据
-const mockBankCards = [
-  {
-    id: 1,
-    bankName: '工商银行',
-    cardNumber: '6222020200018888888',
-    holderName: '张三',
-    isDefault: true,
-    createdAt: '2025-01-15',
-  },
-  {
-    id: 2,
-    bankName: '建设银行',
-    cardNumber: '6217000010006666666',
-    holderName: '张三',
-    isDefault: false,
-    createdAt: '2025-03-20',
-  },
-];
+import { listBankCards, addBankCard, setDefaultBankCard, deleteBankCard } from '../services/bank-card';
 
 const banks = [
   { id: 'icbc', name: '工商银行', icon: '🏦', color: '#C8102E' },
@@ -52,7 +33,7 @@ const banks = [
 const BankCardManagement = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [bankCards, setBankCards] = useState(mockBankCards);
+  const [bankCards, setBankCards] = useState<any[]>([]);
   const [addDialogVisible, setAddDialogVisible] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState<any>(null);
@@ -66,12 +47,17 @@ const BankCardManagement = () => {
     loadBankCards();
   }, []);
 
-  const loadBankCards = () => {
+  const loadBankCards = async () => {
     setLoading(true);
-    // 模拟 API 调用
-    setTimeout(() => {
+    try {
+      const list = await listBankCards();
+      setBankCards(list || []);
+    } catch (error) {
+      logger.error('获取银行卡失败:', error);
+      MessagePlugin.error('获取银行卡失败');
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   const maskCardNumber = (cardNumber: string) => {
@@ -102,17 +88,11 @@ const BankCardManagement = () => {
     }
 
     try {
-      // 模拟 API 调用
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      const newCard = {
-        id: Date.now(),
-        bankName: banks.find((b) => b.id === formValue.bankName)?.name,
+      const newCard = await addBankCard({
+        bankName: banks.find((b) => b.id === formValue.bankName)?.name || '',
         cardNumber: formValue.cardNumber,
         holderName: formValue.holderName,
-        isDefault: bankCards.length === 0,
-        createdAt: new Date().toISOString().split('T')[0],
-      };
+      });
 
       setBankCards([...bankCards, newCard]);
       setAddDialogVisible(false);
@@ -127,9 +107,7 @@ const BankCardManagement = () => {
 
   const handleSetDefault = async (cardId: number) => {
     try {
-      // 模拟 API 调用
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
+      await setDefaultBankCard(cardId);
       setBankCards(
         bankCards.map((card) => ({
           ...card,
@@ -151,9 +129,7 @@ const BankCardManagement = () => {
 
   const handleDeleteCard = async () => {
     try {
-      // 模拟 API 调用
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
+      await deleteBankCard(selectedCard.id);
       setBankCards(bankCards.filter((card) => card.id !== selectedCard.id));
       setDeleteDialogVisible(false);
       setSelectedCard(null);
