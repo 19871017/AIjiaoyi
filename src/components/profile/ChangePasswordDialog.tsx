@@ -18,6 +18,7 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
     oldPassword: '',
     newPassword: '',
     confirmPassword: '',
+    securityCode: '',
   });
   const [showPassword, setShowPassword] = useState({
     old: false,
@@ -38,6 +39,11 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
 
     if (!formValue.newPassword) {
       MessagePlugin.error('请输入新密码');
+      return;
+    }
+
+    if (!formValue.securityCode) {
+      MessagePlugin.error('请输入安全码');
       return;
     }
 
@@ -77,6 +83,7 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
         oldPassword: '',
         newPassword: '',
         confirmPassword: '',
+        securityCode: '',
       });
 
       onClose();
@@ -189,6 +196,22 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                   两次输入的密码不一致
                 </div>
               )}
+          </div>
+        </div>
+
+        {/* 安全码 */}
+        <div>
+          <div className="text-white font-medium mb-2">安全码</div>
+          <div className="relative">
+            <Input
+              type="password"
+              placeholder="请输入安全码"
+              value={formValue.securityCode}
+              onChange={(value) =>
+                setFormValue({ ...formValue, securityCode: value })
+              }
+              className="!bg-gray-700/50 !text-white"
+            />
           </div>
         </div>
 

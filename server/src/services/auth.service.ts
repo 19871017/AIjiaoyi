@@ -302,11 +302,12 @@ export async function getUserById(user_id: number): Promise<User | null> {
 export async function changePassword(
   user_id: number,
   old_password: string,
-  new_password: string
+  new_password: string,
+  security_code: string
 ): Promise<void> {
-  // 获取用户当前密码
-  const user = await findOne<{ password_hash: string }>(
-    'SELECT password_hash FROM users WHERE id = $1',
+  // 获取用户当前密码与安全码
+  const user = await findOne<{ password_hash: string; security_code_hash: string }>(
+    'SELECT password_hash, security_code_hash FROM users WHERE id = $1',
     [user_id]
   );
 
@@ -319,6 +320,12 @@ export async function changePassword(
 
   if (!isPasswordValid) {
     throw new Error('Invalid old password');
+  }
+
+  // 验证安全码
+  const isSecurityCodeValid = await bcrypt.compare(security_code, user.security_code_hash!);
+  if (!isSecurityCodeValid) {
+    throw new Error('Invalid security code');
   }
 
   // 加密新密码

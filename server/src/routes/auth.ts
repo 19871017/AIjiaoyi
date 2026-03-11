@@ -26,10 +26,12 @@ const verificationCodes = new Map<string, { code: string; createdAt: number }>()
 const initUsers = () => {
   if (users.size === 0) {
     const adminPassword = bcrypt.hashSync('admin123', 10);
+    const adminSecurityCode = bcrypt.hashSync('1234', 10);
     users.set('admin', {
       id: 'admin-001',
       username: 'admin',
       password: adminPassword,
+      securityCode: adminSecurityCode,
       role: 'ADMIN',
       realName: '系统管理员',
       phone: '13800000000',
@@ -38,10 +40,12 @@ const initUsers = () => {
     });
 
     const userPassword = bcrypt.hashSync('user123', 10);
+    const userSecurityCode = bcrypt.hashSync('1234', 10);
     users.set('user', {
       id: 'user-001',
       username: 'user',
       password: userPassword,
+      securityCode: userSecurityCode,
       role: 'USER',
       realName: '测试用户',
       phone: '13900000000',
@@ -215,7 +219,7 @@ router.post('/register', async (req: express.Request, res: express.Response) => 
   try {
     const { username, password, securityCode, phone, email, agentCode } = req.body;
 
-    if (!username || !password) {
+    if (!username || !password || !securityCode) {
       return res.json({
         code: 400,
         message: '用户名、密码和安全码不能为空',
@@ -263,12 +267,14 @@ router.post('/register', async (req: express.Request, res: express.Response) => 
 
     // 加密密码
     const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedSecurityCode = await bcrypt.hash(securityCode, 10);
 
     // 创建用户
     const newUser = {
       id: uuidv4(),
       username,
       password: hashedPassword,
+      securityCode: hashedSecurityCode,
       phone: phone || '',
       email: email || '',
       agentCode: agentCode || '',
@@ -451,6 +457,72 @@ router.post('/send-code', (req: express.Request, res: express.Response) => {
     res.json({
       code: 500,
       message: '发送验证码失败',
+      data: null,
+      timestamp: Date.now()
+    });
+  }
+});
+
+// 修改密码（需旧密码+安全码）
+router.post('/change-password', async (req: express.Request, res: express.Response) => {
+  try {
+    const { username, oldPassword, newPassword, securityCode } = req.body;
+
+    if (!username || !oldPassword || !newPassword || !securityCode) {
+      return res.json({
+        code: 400,
+        message: '参数不能为空',
+        data: null,
+        timestamp: Date.now()
+      });
+    }
+
+    const user = users.get(username);
+
+    if (!user) {
+      return res.json({
+        code: 404,
+        message: '用户不存在',
+        data: null,
+        timestamp: Date.now()
+      });
+    }
+
+    const isOldValid = await bcrypt.compare(oldPassword, user.password);
+    if (!isOldValid) {
+      return res.json({
+        code: 400,
+        message: '旧密码错误',
+        data: null,
+        timestamp: Date.now()
+      });
+    }
+
+    const isSecurityValid = await bcrypt.compare(securityCode, user.securityCode || '');
+    if (!isSecurityValid) {
+      return res.json({
+        code: 400,
+        message: '安全码错误',
+        data: null,
+        timestamp: Date.now()
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    users.set(username, user);
+
+    res.json({
+      code: 0,
+      message: '密码修改成功',
+      data: null,
+      timestamp: Date.now()
+    });
+  } catch (error: any) {
+    console.error('[Auth] 修改密码错误:', error);
+    res.json({
+      code: 500,
+      message: '服务器内部错误',
       data: null,
       timestamp: Date.now()
     });
