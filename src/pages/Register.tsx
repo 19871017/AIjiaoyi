@@ -24,6 +24,10 @@ const i18n = {
     passwordPlaceholder: '请输入密码（至少6位）',
     confirmPasswordLabel: '确认密码',
     confirmPasswordPlaceholder: '请再次输入密码',
+    securityCodeLabel: '安全码',
+    securityCodePlaceholder: '用于修改密码/提现（至少4位）',
+    confirmSecurityCodeLabel: '确认安全码',
+    confirmSecurityCodePlaceholder: '请再次输入安全码',
     validating: '验证邀请码中…',
     inviteSuccess: '邀请码验证成功',
     inviteError: '邀请码无效',
@@ -53,6 +57,10 @@ const i18n = {
     passwordPlaceholder: 'Enter password (min 6 chars)',
     confirmPasswordLabel: 'Confirm Password',
     confirmPasswordPlaceholder: 'Enter password again',
+    securityCodeLabel: 'Security Code',
+    securityCodePlaceholder: 'For password/withdraw (min 4 chars)',
+    confirmSecurityCodeLabel: 'Confirm Security Code',
+    confirmSecurityCodePlaceholder: 'Enter security code again',
     validating: 'Validating invite code…',
     inviteSuccess: 'Invite code verified',
     inviteError: 'Invalid invite code',
@@ -71,6 +79,8 @@ interface RegisterData {
   username: string;
   password: string;
   confirmPassword: string;
+  securityCode: string;
+  confirmSecurityCode: string;
   realName: string;
   phone: string;
   email?: string;
@@ -89,6 +99,8 @@ export default function Register() {
     username: '',
     password: '',
     confirmPassword: '',
+    securityCode: '',
+    confirmSecurityCode: '',
     realName: '',
     phone: '',
     email: '',
@@ -172,12 +184,21 @@ export default function Register() {
       MessagePlugin.error('两次输入的密码不一致');
       return;
     }
+    if (!form.securityCode || form.securityCode.length < 4) {
+      MessagePlugin.error('请输入安全码（至少4位）');
+      return;
+    }
+    if (form.securityCode !== form.confirmSecurityCode) {
+      MessagePlugin.error('两次输入的安全码不一致');
+      return;
+    }
 
     setLoading(true);
     try {
       const response = await axios.post('/api/auth/register', {
         username: form.username,
         password: form.password,
+        securityCode: form.securityCode,
         realName: form.realName,
         phone: form.phone,
         email: form.email,
@@ -347,6 +368,38 @@ export default function Register() {
             placeholder={t.confirmPasswordPlaceholder}
             value={form.confirmPassword}
             onChange={(val) => setFieldValue('confirmPassword', val as string)}
+            prefixIcon={<LockOnIcon />}
+            className="!bg-slate-900/50 !border-slate-700 !text-white !py-2 focus:!border-blue-500 focus:!ring-1 focus:!ring-blue-500/20"
+          />
+        </div>
+
+        {/* 安全码 */}
+        <div>
+          <label className="block text-slate-300 text-xs mb-1.5 font-medium">
+            {t.securityCodeLabel} <span className="text-red-400">*</span>
+          </label>
+          <Input
+            size="medium"
+            type="password"
+            placeholder={t.securityCodePlaceholder}
+            value={form.securityCode}
+            onChange={(val) => setFieldValue('securityCode', val as string)}
+            prefixIcon={<LockOnIcon />}
+            className="!bg-slate-900/50 !border-slate-700 !text-white !py-2 focus:!border-blue-500 focus:!ring-1 focus:!ring-blue-500/20"
+          />
+        </div>
+
+        {/* 确认安全码 */}
+        <div>
+          <label className="block text-slate-300 text-xs mb-1.5 font-medium">
+            {t.confirmSecurityCodeLabel} <span className="text-red-400">*</span>
+          </label>
+          <Input
+            size="medium"
+            type="password"
+            placeholder={t.confirmSecurityCodePlaceholder}
+            value={form.confirmSecurityCode}
+            onChange={(val) => setFieldValue('confirmSecurityCode', val as string)}
             prefixIcon={<LockOnIcon />}
             className="!bg-slate-900/50 !border-slate-700 !text-white !py-2 focus:!border-blue-500 focus:!ring-1 focus:!ring-blue-500/20"
           />

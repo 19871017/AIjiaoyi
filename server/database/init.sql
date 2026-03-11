@@ -34,6 +34,7 @@ CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    security_code_hash VARCHAR(255), -- 安全码（用于修改密码/提现验证）
     phone VARCHAR(20) UNIQUE,
     email VARCHAR(100) UNIQUE,
     real_name VARCHAR(50),
@@ -556,7 +557,7 @@ INSERT INTO system_configs (config_key, config_value, config_type, description, 
 ('MIN_DEPOSIT', '100', 'number', '最小充值金额', true),
 ('MIN_WITHDRAW', '100', 'number', '最小提现金额', true),
 ('WITHDRAW_FEE_RATE', '0.005', 'number', '提现手续费率', true),
-('MAX_DAILY_WITHDRAW', '100000', 'number',每日最大提现金额', false);
+('MAX_DAILY_WITHDRAW', '100000', 'number', '每日最大提现金额', false);
 
 -- API 密钥管理表
 CREATE TABLE api_keys (

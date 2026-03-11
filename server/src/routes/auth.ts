@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
@@ -112,7 +112,7 @@ router.post('/login', async (req: express.Request, res: express.Response) => {
     if (!username || !password) {
       return res.json({
         code: 400,
-        message: '用户名和密码不能为空',
+        message: '用户名、密码和安全码不能为空',
         data: null,
         timestamp: Date.now()
       });
@@ -213,12 +213,12 @@ router.post('/login', async (req: express.Request, res: express.Response) => {
 // 用户注册
 router.post('/register', async (req: express.Request, res: express.Response) => {
   try {
-    const { username, password, phone, email, agentCode } = req.body;
+    const { username, password, securityCode, phone, email, agentCode } = req.body;
 
     if (!username || !password) {
       return res.json({
         code: 400,
-        message: '用户名和密码不能为空',
+        message: '用户名、密码和安全码不能为空',
         data: null,
         timestamp: Date.now()
       });
@@ -237,6 +237,15 @@ router.post('/register', async (req: express.Request, res: express.Response) => 
       return res.json({
         code: 400,
         message: '密码至少6个字符',
+        data: null,
+        timestamp: Date.now()
+      });
+    }
+
+    if (securityCode.length < 4) {
+      return res.json({
+        code: 400,
+        message: '安全码至少4位',
         data: null,
         timestamp: Date.now()
       });
@@ -556,3 +565,4 @@ router.post('/reset-password', (req: express.Request, res: express.Response) => 
 // });
 
 export default router;
+

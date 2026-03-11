@@ -40,6 +40,7 @@ export interface User {
 export interface RegisterData {
   username: string;
   password: string;
+  security_code: string;
   phone?: string;
   email?: string;
   referral_code?: string;
@@ -154,15 +155,18 @@ export async function register(data: RegisterData): Promise<User> {
   // 加密密码
   const password_hash = await bcrypt.hash(data.password, 10);
 
+  // 加密安全码
+  const security_code_hash = await bcrypt.hash(data.security_code, 10);
+
   // 生成推荐码
   const referral_code = uuidv4().substring(0, 8).toUpperCase();
 
   // 创建用户
   const result = await query(
-    `INSERT INTO users (username, password_hash, phone, email, referral_code, agent_id)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO users (username, password_hash, security_code_hash, phone, email, referral_code, agent_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING id, username, phone, email, real_name, status, kyc_status, role_id, agent_id, referral_code, avatar, created_at`,
-    [data.username, password_hash, data.phone, data.email, referral_code, agent_id]
+    [data.username, password_hash, security_code_hash, data.phone, data.email, referral_code, agent_id]
   );
 
   const user = result.rows[0];
