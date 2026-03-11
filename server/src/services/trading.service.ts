@@ -5,6 +5,52 @@ import logger from '../utils/logger';
 import redis from '../utils/redis';
 import { updateAccountBalance } from './finance.service';
 
+// ==============================
+// 货币换算（默认人民币口径）
+// ==============================
+const BASE_CURRENCY = 'CNY';
+
+async function getFxRate(quoteCurrency?: string): Promise<number> {
+  if (!quoteCurrency || quoteCurrency.toUpperCase() === BASE_CURRENCY) {
+    return 1;
+  }
+
+  const pair = `${quoteCurrency.toUpperCase()}${BASE_CURRENCY}`;
+  const key = `fx:${pair}`;
+
+  const cached = await redis.get(key);
+  if (cached) {
+    const rate = Number(cached);
+    return Number.isFinite(rate) && rate > 0 ? rate : 1;
+  }
+
+  // fallback: 可在后续接入真实汇率源
+  return 1;
+}
+
+function calcMargin(
+  price: number,
+  contractSize: number,
+  lotSize: number,
+  marginRequirement: number,
+  leverage: number
+): number {
+  return price * contractSize * lotSize * marginRequirement / leverage;
+}
+
+function calcPnl(
+  entryPrice: number,
+  currentPrice: number,
+  contractSize: number,
+  lotSize: number,
+  direction: OrderDirection
+): number {
+  if (direction === OrderDirection.LONG) {
+    return (currentPrice - entryPrice) * contractSize * lotSize;
+  }
+  return (entryPrice - currentPrice) * contractSize * lotSize;
+}
+
 /**
  * 订单类型
  */
@@ -131,23 +177,31 @@ export async function createOrder(data: CreateOrderData) {
       throw new Error('Invalid lot size');
     }
 
-    // 5. 计算保证金
-    const margin = data.lot_size * prod.contract_size * (prod.margin_requirement || 0.01) / data.leverage;
-
-    // 6. 检查余额是否充足
-    if (account.rows[0].available_balance < margin) {
-      throw new Error('Insufficient balance');
-    }
-
-    // 7. 风控检查
-    await riskCheck(client, data.user_id, data.product_id, data.lot_size, margin);
-
-    // 8. 获取当前价格
+    // 5. 获取当前价格（用于保证金与成交计算）
     const currentPrice = await getCurrentPrice(data.product_id);
 
     if (!currentPrice) {
       throw new Error('Unable to get current price');
     }
+
+    // 6. 计算保证金（按报价币计算后换算为人民币）
+    const fxRate = await getFxRate(prod.quote_currency);
+    const marginRaw = calcMargin(
+      currentPrice,
+      Number(prod.contract_size),
+      data.lot_size,
+      Number(prod.margin_requirement || 0.01),
+      data.leverage
+    );
+    const margin = marginRaw * fxRate;
+
+    // 7. 检查余额是否充足
+    if (account.rows[0].available_balance < margin) {
+      throw new Error('Insufficient balance');
+    }
+
+    // 8. 风控检查
+    await riskCheck(client, data.user_id, data.product_id, data.lot_size, margin);
 
     // 9. 计算手续费
     const commission = data.lot_size * (prod.commission || 0);
@@ -292,7 +346,7 @@ export async function closePosition(data: ClosePositionData) {
   return await transaction(async (client) => {
     // 1. 获取持仓信息
     const position = await client.query(
-      `SELECT p.*, prod.symbol, prod.tick_value, prod.contract_size
+      `SELECT p.*, prod.symbol, prod.tick_value, prod.contract_size, prod.quote_currency
        FROM positions p
        JOIN products prod ON p.product_id = prod.id
        WHERE p.id = $1 AND p.user_id = $2 AND p.status = 1`,
@@ -319,19 +373,15 @@ export async function closePosition(data: ClosePositionData) {
       throw new Error('Unable to get current price');
     }
 
-    // 4. 计算盈亏
-    let profit: number;
-    if (pos.direction === OrderDirection.LONG) {
-      profit = (currentPrice - pos.entry_price) * closeLotSize * pos.contract_size;
-    } else {
-      profit = (pos.entry_price - currentPrice) * closeLotSize * pos.contract_size;
-    }
+    // 4. 计算盈亏（报价币）并换算成人民币
+    const fxRate = await getFxRate(pos.quote_currency || 'CNY');
+    const profitRaw = calcPnl(pos.entry_price, currentPrice, pos.contract_size, closeLotSize, pos.direction);
 
     // 5. 计算手续费
     const commission = closeLotSize * (pos.commission / pos.lot_size);
 
-    // 6. 计算净盈亏
-    const netProfit = profit - commission;
+    // 6. 计算净盈亏（人民币口径）
+    const netProfit = (profitRaw * fxRate) - commission;
 
     // 7. 创建平仓订单
     const orderNumber = generateOrderNumber();
@@ -529,7 +579,7 @@ async function riskCheck(
 export async function updatePositionPrices(): Promise<void> {
   const positions = await query(
     `SELECT p.id, p.user_id, p.product_id, p.direction, p.lot_size, p.entry_price, p.leverage, p.margin, p.stop_loss, p.take_profit,
-            prod.contract_size
+            prod.contract_size, prod.quote_currency
      FROM positions p
      JOIN products prod ON p.product_id = prod.id
      WHERE p.status = 1`
@@ -558,8 +608,10 @@ export async function updatePositionPrices(): Promise<void> {
       [currentPrice, floatingPl, pos.id]
     );
 
-    // 计算保证金比例
-    const marginRatio = (pos.margin + floatingPl) / pos.margin;
+    // 计算保证金比例（人民币口径）
+    const fxRate = await getFxRate(pos.quote_currency || 'CNY');
+    const floatingPlCny = floatingPl * fxRate;
+    const marginRatio = (pos.margin + floatingPlCny) / pos.margin;
 
     // 获取风控规则
     const riskRules = await query(
@@ -591,7 +643,7 @@ export async function executeLiquidation(positionId: number, userId: number): Pr
     await transaction(async (client) => {
       // 1. 获取持仓信息
       const positionResult = await client.query(
-        `SELECT p.*, prod.symbol, prod.contract_size
+        `SELECT p.*, prod.symbol, prod.contract_size, prod.quote_currency
          FROM positions p
          JOIN products prod ON p.product_id = prod.id
          WHERE p.id = $1 AND p.status = 1`,
@@ -611,19 +663,15 @@ export async function executeLiquidation(positionId: number, userId: number): Pr
         throw new Error('Unable to get current price for liquidation');
       }
 
-      // 3. 计算盈亏
-      let profit: number;
-      if (position.direction === OrderDirection.LONG) {
-        profit = (currentPrice - position.entry_price) * position.lot_size * position.contract_size;
-      } else {
-        profit = (position.entry_price - currentPrice) * position.lot_size * position.contract_size;
-      }
+      // 3. 计算盈亏（报价币）并换算成人民币
+      const fxRate = await getFxRate(position.quote_currency || 'CNY');
+      const profitRaw = calcPnl(position.entry_price, currentPrice, position.contract_size, position.lot_size, position.direction);
 
       // 4. 计算手续费
       const commission = position.commission;
 
-      // 5. 计算净盈亏
-      const netProfit = profit - commission;
+      // 5. 计算净盈亏（人民币口径）
+      const netProfit = (profitRaw * fxRate) - commission;
 
       // 6. 创建强平订单
       const orderNumber = generateOrderNumber();
@@ -734,7 +782,7 @@ async function sendRiskWarning(positionId: number, userId: number, warningType: 
   try {
     // 获取持仓信息
     const position = await findOne(
-      `SELECT p.*, u.username, u.email, u.phone, prod.symbol
+      `SELECT p.*, u.username, u.email, u.phone, prod.symbol, prod.contract_size, prod.quote_currency
        FROM positions p
        JOIN users u ON p.user_id = u.id
        JOIN products prod ON p.product_id = prod.id
@@ -750,7 +798,7 @@ async function sendRiskWarning(positionId: number, userId: number, warningType: 
     // 获取当前价格
     const currentPrice = await getCurrentPrice(position.product_id);
 
-    // 计算浮动盈亏
+    // 计算浮动盈亏（报价币）并换算成人民币
     let floatingPl: number;
     if (position.direction === OrderDirection.LONG) {
       floatingPl = (currentPrice - position.entry_price) * position.lot_size * position.contract_size;
@@ -758,8 +806,11 @@ async function sendRiskWarning(positionId: number, userId: number, warningType: 
       floatingPl = (position.entry_price - currentPrice) * position.lot_size * position.contract_size;
     }
 
-    // 计算保证金比例
-    const marginRatio = (position.margin + floatingPl) / position.margin;
+    const fxRate = await getFxRate(position.quote_currency || 'CNY');
+    const floatingPlCny = floatingPl * fxRate;
+
+    // 计算保证金比例（人民币口径）
+    const marginRatio = (position.margin + floatingPlCny) / position.margin;
 
     // 创建预警记录
     await query(
