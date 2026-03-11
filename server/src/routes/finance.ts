@@ -1,6 +1,7 @@
-import express from 'express';
+﻿import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import logger from '../utils/logger';
 import { ErrorCode, createErrorResponse, createSuccessResponse } from '../utils/error-codes';
 import { findOne, query, transaction } from '../config/database';
@@ -60,7 +61,7 @@ declare global {
  */
 router.post('/deposit', authenticateUser, async (req: express.Request, res: express.Response) => {
   try {
-    const { userId, amount, method, bankAccount, bankName, accountName, usdtAddress } = req.body;
+    const { userId, amount, method, bankAccount, bankName, accountName, usdtAddress, securityCode } = req.body;
 
     if (!userId || !amount || !method) {
       return res.status(400).json(createErrorResponse(ErrorCode.MISSING_PARAM));
@@ -120,7 +121,7 @@ router.post('/deposit', authenticateUser, async (req: express.Request, res: expr
  */
 router.post('/withdraw', authenticateUser, async (req: express.Request, res: express.Response) => {
   try {
-    const { userId, amount, method, bankAccount, bankName, accountName, usdtAddress } = req.body;
+    const { userId, amount, method, bankAccount, bankName, accountName, usdtAddress, securityCode } = req.body;
 
     if (!userId || !amount || !method) {
       return res.status(400).json(createErrorResponse(ErrorCode.MISSING_PARAM));
@@ -134,6 +135,22 @@ router.post('/withdraw', authenticateUser, async (req: express.Request, res: exp
     // 验证最低提现金额
     if (amount < 100) {
       return res.status(400).json(createErrorResponse(ErrorCode.WITHDRAW_TOO_HIGH, '提现金额不能低于100'));
+    }
+
+    // 校验安全码
+    const user = await findOne(
+      `SELECT security_code_hash FROM users WHERE id = $1`,
+      [userId]
+    );
+
+    if (!user?.security_code_hash) {
+      return res.status(400).json(createErrorResponse(ErrorCode.INVALID_PARAM, '未设置安全码'));
+    }
+
+    const isSecurityCodeValid = await bcrypt.compare(securityCode, user.security_code_hash);
+
+    if (!isSecurityCodeValid) {
+      return res.status(400).json(createErrorResponse(ErrorCode.INVALID_PARAM, '安全码错误'));
     }
 
     // 检查用户余额是否足够
@@ -294,3 +311,4 @@ router.get('/records/:id', authenticateUser, async (req: express.Request, res: e
 });
 
 export default router;
+

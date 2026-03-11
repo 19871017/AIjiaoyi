@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Button,
@@ -67,7 +67,7 @@ const Withdraw = () => {
     paymentMethod: 'bank',
     bankCard: '',
     usdtAddress: '',
-    password: '',
+    securityCode: '',
   });
   const [records, setRecords] = useState(mockWithdrawRecords);
   const [successDialog, setSuccessDialog] = useState(false);
@@ -128,8 +128,8 @@ const Withdraw = () => {
       return;
     }
 
-    if (!formValue.password) {
-      MessagePlugin.error('请输入交易密码');
+    if (!formValue.securityCode) {
+      MessagePlugin.error('请输入安全码');
       return;
     }
 
@@ -178,7 +178,7 @@ const Withdraw = () => {
         paymentMethod: 'bank',
         bankCard: '',
         usdtAddress: '',
-        password: '',
+        securityCode: '',
       });
 
       MessagePlugin.success('提现申请已提交');
@@ -378,16 +378,16 @@ const Withdraw = () => {
               )}
             </div>
 
-            {/* 交易密码 */}
+            {/* 安全码 */}
             <div>
-              <div className="text-white font-medium mb-3">交易密码</div>
+              <div className="text-white font-medium mb-3">安全码</div>
               <Input
                 size="large"
                 type="password"
-                placeholder="请输入交易密码"
-                value={formValue.password}
+                placeholder="请输入安全码"
+                value={formValue.securityCode}
                 onChange={(value) =>
-                  setFormValue({ ...formValue, password: value })
+                  setFormValue({ ...formValue, securityCode: value })
                 }
                 className="!bg-gray-700/50 !text-white"
               />
@@ -534,3 +534,6 @@ const Withdraw = () => {
 };
 
 export default Withdraw;
+
+
+
