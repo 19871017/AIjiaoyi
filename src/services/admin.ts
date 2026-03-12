@@ -374,6 +374,24 @@ export const riskApi = {
   })
 };
 
+export const announcementApi = {
+  getList: (params?: { page?: number; pageSize?: number; status?: string }) => {
+    const query = new URLSearchParams(params as any).toString();
+    return adminRequest<any>(`/admin/announcements${query ? '?' + query : ''}`);
+  },
+  create: (data: { title: string; content: string; status?: number }) => adminRequest<any>('/admin/announcements', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
+  update: (id: number, data: { title?: string; content?: string; status?: number }) => adminRequest<any>(`/admin/announcements/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  }),
+  remove: (id: number) => adminRequest<void>(`/admin/announcements/${id}`, {
+    method: 'DELETE'
+  })
+};
+
 export const adminApi = {
   dashboard: dashboardApi,
   user: userApi,
@@ -385,7 +403,8 @@ export const adminApi = {
   product: productApi,
   commission: commissionApi,
   fees: feesApi,
-  risk: riskApi
+  risk: riskApi,
+  announcement: announcementApi
 };
 
 export default adminApi;

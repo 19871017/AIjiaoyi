@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Card,
@@ -52,6 +52,7 @@ const menuItems = [
   { key: 'finance', icon: <WalletIcon size="20px" />, label: '财务管理' },
   { key: 'commission', icon: <WalletIcon size="20px" />, label: '分佣管理' },
   { key: 'risk', icon: <SettingIcon size="20px" />, label: '风控管理' },
+  { key: 'announcements', icon: <SettingIcon size="20px" />, label: '公告管理' },
   { key: 'settings', icon: <SettingIcon size="20px" />, label: '系统设置' }
 ];
 
@@ -77,6 +78,9 @@ export default function AdminPC() {
   const [riskOverview, setRiskOverview] = useState<any>({});
   const [riskPositions, setRiskPositions] = useState<any[]>([]);
   const [riskSettings, setRiskSettings] = useState<any>({});
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [announceModal, setAnnounceModal] = useState(false);
+  const [announceForm, setAnnounceForm] = useState<any>({ title: '', content: '', status: 1, id: null });
 
   const [dashboardStats, setDashboardStats] = useState<any[]>([]);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
@@ -171,6 +175,57 @@ export default function AdminPC() {
       Message.error('加载风控数据失败');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAnnouncements = async () => {
+    try {
+      setLoading(true);
+      const data = await adminApi.announcement.getList({ page: 1, pageSize: 20 });
+      setAnnouncements(data?.list || []);
+    } catch (error) {
+      Message.error('加载公告失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const editAnnouncement = (row: any) => {
+    setAnnounceForm({ id: row.id, title: row.title, content: row.content, status: row.status });
+    setAnnounceModal(true);
+  };
+
+  const deleteAnnouncement = async (id: number) => {
+    try {
+      await adminApi.announcement.remove(id);
+      Message.success('删除成功');
+      await loadAnnouncements();
+    } catch (error) {
+      Message.error('删除失败');
+    }
+  };
+
+  const saveAnnouncement = async () => {
+    try {
+      if (announceForm.id) {
+        await adminApi.announcement.update(announceForm.id, {
+          title: announceForm.title,
+          content: announceForm.content,
+          status: announceForm.status
+        });
+      } else {
+        await adminApi.announcement.create({
+          title: announceForm.title,
+          content: announceForm.content,
+          status: announceForm.status
+        });
+      }
+      Message.success('保存成功');
+      setAnnounceModal(false);
+      setAnnounceForm({ title: '', content: '', status: 1, id: null });
+      await loadAnnouncements();
+    } catch (error) {
+      Message.error('保存失败');
     }
   };
 
@@ -682,7 +737,65 @@ export default function AdminPC() {
   );
 
   // 渲染系统设置
-  const renderSettings = () => (
+  const renderAnnouncements = () => (
+      <div className="space-y-6">
+        <Card className="!border-0 !shadow-sm" title="公告管理">
+          <div className="mb-4 flex gap-4">
+            <Input placeholder="标题搜索" style={{ width: 240 }} clearable />
+            <Select placeholder="状态" clearable style={{ width: 120 }}>
+              <Select.Option value="1">启用</Select.Option>
+              <Select.Option value="0">停用</Select.Option>
+            </Select>
+            <Button theme="primary" onClick={() => setAnnounceModal(true)}>新增公告</Button>
+            <Button theme="default" onClick={loadAnnouncements}>刷新</Button>
+          </div>
+          <Table
+            columns={[
+              { colKey: 'id', title: 'ID', width: 80 },
+              { colKey: 'title', title: '标题', minWidth: 200 },
+              { colKey: 'status', title: '状态', width: 100, cell: (row: any) => (
+                <Tag theme={row.status === 1 ? 'success' : 'default'}>{row.status === 1 ? '启用' : '停用'}</Tag>
+              ) },
+              { colKey: 'created_at', title: '创建时间', width: 180 },
+              { colKey: 'action', title: '操作', width: 140, cell: (row: any) => (
+                <div className="space-x-2">
+                  <Button size="small" variant="text" onClick={() => editAnnouncement(row)}>编辑</Button>
+                  <Button size="small" variant="text" theme="danger" onClick={() => deleteAnnouncement(row.id)}>删除</Button>
+                </div>
+              ) }
+            ]}
+            data={announcements}
+            stripe
+            hover
+            size="small"
+          />
+        </Card>
+
+        <Dialog
+          header="公告"
+          visible={announceModal}
+          onClose={() => setAnnounceModal(false)}
+          onConfirm={saveAnnouncement}
+        >
+          <Form labelWidth={80}>
+            <FormItem label="标题">
+              <Input value={announceForm.title} onChange={(v) => setAnnounceForm({ ...announceForm, title: v as string })} />
+            </FormItem>
+            <FormItem label="内容">
+              <Input value={announceForm.content} onChange={(v) => setAnnounceForm({ ...announceForm, content: v as string })} />
+            </FormItem>
+            <FormItem label="状态">
+              <Select value={String(announceForm.status)} onChange={(v) => setAnnounceForm({ ...announceForm, status: Number(v) })}>
+                <Select.Option value="1">启用</Select.Option>
+                <Select.Option value="0">停用</Select.Option>
+              </Select>
+            </FormItem>
+          </Form>
+        </Dialog>
+      </div>
+    );
+
+const renderSettings = () => (
     <div className="space-y-6">
       <Card className="!border-0 !shadow-sm" title="基本设置">
         <div className="space-y-4 max-w-2xl">
@@ -1421,8 +1534,7 @@ export default function AdminPC() {
         return renderCommission();
       case 'risk':
         return renderRisk();
-      case 'settings':
-        return renderSettings();
+      case 'settings':\n        return renderSettings();\n      case 'announcements':\n        return renderAnnouncements();
       default:
         return renderDashboard();
     }
@@ -1520,3 +1632,6 @@ export default function AdminPC() {
     </div>
   );
 }
+
+
+
