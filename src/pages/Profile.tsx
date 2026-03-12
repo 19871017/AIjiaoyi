@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Badge, Dialog, MessagePlugin } from 'tdesign-react';
 import {
@@ -20,26 +20,9 @@ import EditProfileDialog from '../components/profile/EditProfileDialog';
 import ChangePasswordDialog from '../components/profile/ChangePasswordDialog';
 import NoticeDetailDialog from '../components/profile/NoticeDetailDialog';
 import logger from '../utils/logger';
+import api from '../services/api';
+import { getUser } from '../services/auth';
 
-// 用户数据
-const userData = {
-  name: '张三',
-  phone: '138****8888',
-  isVerified: true,
-  avatar: ''
-};
-
-// 资产数据
-const assetData = {
-  totalAssets: 850000,
-  availableFunds: 263560,
-  frozenMargin: 586440,
-  dailyPL: 12500,
-  dailyPLPercent: 1.5
-};
-
-// 模拟趋势数据
-const trendData = [800000, 810000, 805000, 815000, 820000, 825000, 830000, 840000, 835000, 850000];
 
 // 账户管理功能
 const accountFunctions = [
@@ -152,6 +135,50 @@ export default function Profile() {
   const [noticeDetailVisible, setNoticeDetailVisible] = useState(false);
   const [selectedNotice, setSelectedNotice] = useState<any>(null);
 
+  const [userData, setUserData] = useState({
+    name: '',
+    phone: '',
+    isVerified: false,
+    avatar: ''
+  });
+
+  const [assetData, setAssetData] = useState({
+    totalAssets: 0,
+    availableFunds: 0,
+    frozenMargin: 0,
+    dailyPL: 0,
+    dailyPLPercent: 0
+  });
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const current = getUser();
+        if (current) {
+          setUserData({
+            name: current.realName || current.username,
+            phone: current.phone || '',
+            isVerified: true,
+            avatar: current.avatar || ''
+          });
+        }
+
+        const accountInfo = await api.account.getInfo();
+        setAssetData({
+          totalAssets: accountInfo.totalBalance ?? 0,
+          availableFunds: accountInfo.availableBalance ?? 0,
+          frozenMargin: accountInfo.frozenMargin ?? 0,
+          dailyPL: accountInfo.unrealizedPnl ?? 0,
+          dailyPLPercent: 0
+        });
+      } catch (error) {
+        logger.error('加载账户信息失败:', error);
+      }
+    };
+
+    loadProfile();
+  }, []);
+
   const handleLogout = () => {
     window.location.href = '/';
   };
@@ -208,8 +235,8 @@ export default function Profile() {
           {/* 资产概览卡片 */}
           <AssetCard
             assets={assetData}
-            showTrend={true}
-            trendData={trendData}
+            showTrend={false}
+            trendData={[]}
           />
 
           {/* 后台管理入口（管理员可见） */}

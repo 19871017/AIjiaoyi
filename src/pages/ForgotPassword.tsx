@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Input, Button, MessagePlugin } from 'tdesign-react';
 import { MailIcon, ArrowLeftIcon } from 'tdesign-icons-react';
 import AuthLayout from '../components/auth/AuthLayout';
+import { sendVerificationCode, resetPassword } from '../services/auth';
 
 // 双语字典
 const i18n = {
@@ -98,9 +99,8 @@ export default function ForgotPassword() {
     }
 
     setLoading(true);
-    // 模拟发送验证码
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await sendVerificationCode(email);
       setCodeSent(true);
       MessagePlugin.success('Verification code sent');
       // 开始倒计时
@@ -114,7 +114,11 @@ export default function ForgotPassword() {
           return prev - 1;
         });
       }, 1000);
-    }, 1000);
+    } catch (error: any) {
+      MessagePlugin.error(error.message || '发送验证码失败');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const validateForm = () => {
@@ -153,12 +157,15 @@ export default function ForgotPassword() {
     if (!validateForm()) return;
 
     setResetting(true);
-    // 模拟重置密码
-    setTimeout(() => {
-      setResetting(false);
+    try {
+      await resetPassword({ email, code, newPassword: password });
       MessagePlugin.success(t.success);
       navigate('/login');
-    }, 1500);
+    } catch (error: any) {
+      MessagePlugin.error(error.message || '重置密码失败');
+    } finally {
+      setResetting(false);
+    }
   };
 
   const handleBackToLogin = () => {

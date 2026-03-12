@@ -18,6 +18,7 @@ import aiRouter from './routes/ai';
 import financeRouter from './routes/finance';
 import bankCardRouter from './routes/bank-card';
 import announcementRouter from './routes/announcement';
+import profileRouter from './routes/profile';
 
 dotenv.config();
 
@@ -175,6 +176,9 @@ app.use('/bank-cards', bankCardRouter);
 
 // 公告
 app.use('/announcements', announcementRouter);
+
+// 个人信息
+app.use('/', profileRouter);
 
 // API 路由
 app.use('/api', createApiRouter(orderManager, positionManager, riskManager, marketService));

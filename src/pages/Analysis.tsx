@@ -614,61 +614,14 @@ export default function Analysis(): JSX.Element {
     return labels;
   };
 
-  // 根据策略数据生成回测数据（使用品种和时间种子确保稳定性）
-  const generateBacktestData = () => {
-    // 基于当前品种和策略生成模拟回测数据
-    const baseProfit = selectedSymbol === 'GOLD' ? 15000 : 
-                      selectedSymbol === 'USOIL' ? 12000 :
-                      selectedSymbol === 'DAX' ? 18000 :
-                      selectedSymbol === 'NQ' ? 20000 : 10000;
-    
-    // 基于品种生成稳定的盈亏数据
-    const symbolSeed = selectedSymbol.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const winRate = strategyList.length > 0 ? 
-      parseInt(strategyList[0].winRate) / 100 : 0.75;
-    
-    return Array.from({ length: 6 }, (_, i) => {
-      // 使用品种种子和月份索引生成确定性的伪随机数
-      const seed = (symbolSeed + i * 31) % 100 / 100;
-      const isWin = seed < winRate;
-      const volatility = 0.3 + ((symbolSeed + i * 17) % 40) / 100;
-      const profit = isWin ? 
-        Math.round(baseProfit * volatility * (0.8 + ((symbolSeed + i * 13) % 40) / 100)) :
-        -Math.round(baseProfit * volatility * 0.3 * (0.5 + ((symbolSeed + i * 11) % 50) / 100));
-      return profit;
-    });
-  };
-
-  // 计算回测统计数据
-  const calculateBacktestStats = () => {
-    const monthlyData = generateBacktestData();
-    const totalProfit = monthlyData.reduce((sum, val) => sum + val, 0);
-    const winCount = monthlyData.filter(val => val > 0).length;
-    const winRate = Math.round((winCount / monthlyData.length) * 100);
-    
-    // 计算最大回撤
-    let maxDrawdown = 0;
-    let peak = 0;
-    let cumulative = 0;
-    monthlyData.forEach(profit => {
-      cumulative += profit;
-      if (cumulative > peak) peak = cumulative;
-      const drawdown = peak - cumulative;
-      if (drawdown > maxDrawdown) maxDrawdown = drawdown;
-    });
-    const drawdownPercent = peak > 0 ? -(maxDrawdown / peak * 100).toFixed(1) : '-5.0';
-    
-    return {
-      monthlyData,
-      totalProfit,
-      winRate,
-      maxDrawdown: drawdownPercent
-    };
-  };
-
-  // 使用 useMemo 缓存回测统计数据，只在品种或策略变化时重新计算
+  // 回测功能暂未接入真实数据
   const backtestStats = useMemo(() => {
-    return calculateBacktestStats();
+    return {
+      monthlyData: [],
+      totalProfit: 0,
+      winRate: 0,
+      maxDrawdown: '0.0'
+    };
   }, [selectedSymbol, strategyList.map(s => s.winRate).join(',')]);
 
   // 策略回测图表

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Dialog, Form, Input, Upload, Button, MessagePlugin } from 'tdesign-react';
 import { UploadIcon, CameraIcon } from 'tdesign-icons-react';
+import { updateProfile } from '../../services/profile';
 
 interface EditProfileDialogProps {
   visible: boolean;
@@ -53,8 +54,12 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
     setSubmitting(true);
 
     try {
-      // 模拟 API 调用
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await updateProfile({
+        name: formValue.name,
+        phone: formValue.phone,
+        email: formValue.email,
+        avatar: previewAvatar,
+      });
 
       // 调用保存回调
       onSave({
