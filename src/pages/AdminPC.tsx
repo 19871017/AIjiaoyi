@@ -1074,7 +1074,8 @@ export default function AdminPC() {
                   CLOSED: { label: '已平仓', theme: 'success' },
                   LIQUIDATED: { label: '已强平', theme: 'danger' }
                 };
-                const status = statusMap[row.status] || { label: row.status || '未知', theme: 'default' };
+                const statusKey = row.status_text || row.status;
+                const status = statusMap[statusKey] || { label: statusKey || '未知', theme: 'default' };
                 return <Tag theme={status.theme}>{status.label}</Tag>;
               },
               width: 100

@@ -697,7 +697,8 @@ router.get('/orders', requirePermission('order:view'), async (req: Request, res:
     const total = parseInt(countResult.rows[0].total);
 
     const dataResult = await query(
-      `SELECT o.*, u.username, u.real_name, p.name as product_name
+      `SELECT o.*, u.username, u.real_name, p.name as product_name,
+              CASE o.status WHEN 0 THEN 'pending' WHEN 1 THEN 'open' WHEN 2 THEN 'closed' ELSE 'unknown' END as status_text
        FROM orders o
        LEFT JOIN users u ON o.user_id = u.id
        LEFT JOIN products p ON o.symbol = p.symbol
@@ -906,7 +907,8 @@ router.get('/positions', requirePermission('position:view'), async (req: Request
 
     const dataResult = await query(
       `SELECT p.*, u.username, u.real_name, pr.name as product_name,
-              (SELECT last_price FROM market_data WHERE symbol = p.symbol) as current_price
+              (SELECT last_price FROM market_data WHERE symbol = p.symbol) as current_price,
+              CASE p.status WHEN 1 THEN 'OPEN' WHEN 2 THEN 'CLOSED' ELSE 'UNKNOWN' END as status_text
        FROM positions p
        LEFT JOIN users u ON p.user_id = u.id
        LEFT JOIN products pr ON p.symbol = pr.symbol

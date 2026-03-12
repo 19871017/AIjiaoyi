@@ -277,13 +277,14 @@ export default function Admin() {\n  useEffect(() => {\n    const loadData = asy
     {
       colKey: 'status',
       title: '状态',
-      cell: (row: any) => (
-        row.status === 'open' ? (
+      cell: (row: any) => {
+        const statusKey = row.status_text || row.status;
+        return statusKey === 'open' ? (
           <Tag theme="primary" shape="round">持仓中</Tag>
         ) : (
           <Tag theme="default" shape="round">已平仓</Tag>
-        )
-      ),
+        );
+      },
       width: 100
     },
     {
@@ -402,9 +403,9 @@ export default function Admin() {\n  useEffect(() => {\n    const loadData = asy
   );
 
   const filteredOrders = orders.filter(o =>
-    (orderStatusFilter ? o.status === orderStatusFilter : true) &&
-    (o.username.toLowerCase().includes(orderSearch.toLowerCase()) ||
-     o.id.toLowerCase().includes(orderSearch.toLowerCase()))
+    (orderStatusFilter ? (o.status_text || o.status) === orderStatusFilter : true) &&
+    (o.username?.toLowerCase().includes(orderSearch.toLowerCase()) ||
+     o.id?.toLowerCase().includes(orderSearch.toLowerCase()))
   );
 
   const filteredTxns = transactions.filter(t =>
