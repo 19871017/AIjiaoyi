@@ -22,6 +22,7 @@ import NoticeDetailDialog from '../components/profile/NoticeDetailDialog';
 import logger from '../utils/logger';
 import api from '../services/api';
 import { getUser } from '../services/auth';
+import { getAnnouncements } from '../services/announcement';
 
 
 // 账户管理功能
@@ -98,33 +99,6 @@ const securityItems = [
   }
 ];
 
-// 系统公告
-const systemNotices = [
-  {
-    id: 1,
-    title: '系统维护通知',
-    content: '2024年2月25日 02:00-04:00 系统升级维护',
-    date: '2024-02-23 10:30',
-    type: 'urgent',
-    read: false
-  },
-  {
-    id: 2,
-    title: '保证金比例调整',
-    content: '黄金保证金比例调整为 8%',
-    date: '2024-02-22 15:20',
-    type: 'important',
-    read: true
-  },
-  {
-    id: 3,
-    title: '新功能上线',
-    content: 'AI分析功能已上线，欢迎体验',
-    date: '2024-02-21 09:15',
-    type: 'normal',
-    read: true
-  }
-];
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -134,6 +108,7 @@ export default function Profile() {
   const [changePasswordVisible, setChangePasswordVisible] = useState(false);
   const [noticeDetailVisible, setNoticeDetailVisible] = useState(false);
   const [selectedNotice, setSelectedNotice] = useState<any>(null);
+  const [systemNotices, setSystemNotices] = useState<any[]>([]);
 
   const [userData, setUserData] = useState({
     name: '',
@@ -171,6 +146,16 @@ export default function Profile() {
           dailyPL: accountInfo.unrealizedPnl ?? 0,
           dailyPLPercent: 0
         });
+
+        const notices = await getAnnouncements();
+        setSystemNotices((notices || []).map((n: any) => ({
+          id: n.id,
+          title: n.title,
+          content: n.content,
+          date: n.created_at,
+          type: 'normal',
+          read: false
+        })));
       } catch (error) {
         logger.error('加载账户信息失败:', error);
       }

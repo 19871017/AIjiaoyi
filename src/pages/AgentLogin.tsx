@@ -320,15 +320,6 @@ export default function AgentLogin() {
                 </button>
               </div>
 
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => navigate('/admin-login')}
-                  className="text-slate-500 text-[11px] hover:text-slate-400 transition-colors"
-                >
-                  管理员入口
-                </button>
-              </div>
             </div>
           </div>
 
