@@ -171,6 +171,16 @@ export default function AdminPC() {
     }
   };
 
+  const handleForceClose = async (row: any) => {
+    try {
+      await adminApi.risk.forceClose({ positionId: row.id, reason: 'admin_force_close' });
+      Message.success('强平已执行');
+      await loadRiskData();
+    } catch (error) {
+      Message.error('强平失败');
+    }
+  };
+
   const loadDashboardData = async () => {
     try {
       setLoading(true);
@@ -1322,7 +1332,9 @@ export default function AdminPC() {
                 cell: (row: any) => (
                   <div className="space-x-2">
                     <Button size="small" variant="text">详情</Button>
-                    <Button size="small" variant="text" theme="danger">强平</Button>
+                    <Button size="small" variant="text" theme="danger" onClick={() => handleForceClose(row)}>
+                      强平
+                    </Button>
                   </div>
                 )
               }

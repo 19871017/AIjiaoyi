@@ -27,9 +27,9 @@ import {
   LockOnIcon
 } from 'tdesign-icons-react';
 import { formatCurrency, formatPrice } from '../utils/format';
-import { adminApi } from '../services/admin';
+import { adminApi, settingsApi } from '../services/admin';
 
-export default function Admin() {\n  useEffect(() => {\n    const loadData = async () => {\n      try {\n        const stats = await adminApi.dashboard.getStats();\n        setStats({\n          totalUsers: stats.total_users ?? 0,\n          activeUsers: stats.active_users ?? 0,\n          totalAgents: stats.total_agents ?? 0,\n          todayOrders: stats.today_orders ?? 0,\n          openPositions: stats.open_positions ?? 0,\n          totalVolume: stats.total_volume ?? 0,\n          totalBalance: stats.total_balance ?? 0,\n          todayProfit: stats.today_profit ?? 0\n        });\n\n        const usersResult = await adminApi.user.getList({ page: 1, pageSize: 20 });\n        setUsers(usersResult.list || []);\n\n        const ordersResult = await adminApi.order.getList({ page: 1, pageSize: 20 });\n        setOrders(ordersResult.list || []);\n\n        const financeResult = await adminApi.finance.getList({ page: 1, pageSize: 20 });\n        setTransactions(financeResult.list || []);\n      } catch (error) {\n        Message.error('加载后台数据失败');\n      }\n    };\n\n    loadData();\n  }, []);
+export default function Admin() {\n  const loadSettings = async () => {\n    try {\n      const settings = await settingsApi.get();\n      setSystemSettings({\n        maintenanceMode: settings.MAINTENANCE_MODE === 'true' || settings.MAINTENANCE_MODE === true,\n        allowRegister: settings.ALLOW_REGISTER === 'true' || settings.ALLOW_REGISTER === true,\n        maxLeverage: parseFloat(settings.MAX_LEVERAGE) || 100,\n        minDeposit: parseFloat(settings.MIN_DEPOSIT) || 100,\n        minWithdraw: parseFloat(settings.MIN_WITHDRAW) || 100,\n        commissionRate: parseFloat(settings.COMMISSION_RATE) || 0.002,\n        platformFee: parseFloat(settings.PLATFORM_FEE) || 0.001\n      });\n    } catch (error) {\n      Message.error('加载系统设置失败');\n    }\n  };\n\n  const saveSettings = async () => {\n    try {\n      await settingsApi.update({\n        MAINTENANCE_MODE: String(systemSettings.maintenanceMode),\n        ALLOW_REGISTER: String(systemSettings.allowRegister),\n        MAX_LEVERAGE: String(systemSettings.maxLeverage),\n        MIN_DEPOSIT: String(systemSettings.minDeposit),\n        MIN_WITHDRAW: String(systemSettings.minWithdraw),\n        COMMISSION_RATE: String(systemSettings.commissionRate),\n        PLATFORM_FEE: String(systemSettings.platformFee)\n      });\n      Message.success('系统设置已保存');\n    } catch (error) {\n      Message.error('保存系统设置失败');\n    }\n  };\n\n  useEffect(() => {\n    const loadData = async () => {\n      try {\n        const stats = await adminApi.dashboard.getStats();\n        setStats({\n          totalUsers: stats.total_users ?? 0,\n          activeUsers: stats.active_users ?? 0,\n          totalAgents: stats.total_agents ?? 0,\n          todayOrders: stats.today_orders ?? 0,\n          openPositions: stats.open_positions ?? 0,\n          totalVolume: stats.total_volume ?? 0,\n          totalBalance: stats.total_balance ?? 0,\n          todayProfit: stats.today_profit ?? 0\n        });\n\n        const usersResult = await adminApi.user.getList({ page: 1, pageSize: 20 });\n        setUsers(usersResult.list || []);\n\n        const ordersResult = await adminApi.order.getList({ page: 1, pageSize: 20 });\n        setOrders(ordersResult.list || []);\n\n        const financeResult = await adminApi.finance.getList({ page: 1, pageSize: 20 });\n        setTransactions(financeResult.list || []);\n\n        await loadSettings();\n      } catch (error) {\n        Message.error('加载后台数据失败');\n      }\n    };\n\n    loadData();\n  }, []);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
 
@@ -207,9 +207,19 @@ export default function Admin() {\n  useEffect(() => {\n    const loadData = asy
           <Button size="small" variant="text" onClick={() => handleEditUser(row)}>
             编辑
           </Button>
+          {row.kyc_status === 0 && (
+            <>
+              <Button size="small" variant="text" theme="success" onClick={() => handleKyc(row.id, true)}>
+                通过KYC
+              </Button>
+              <Button size="small" variant="text" theme="danger" onClick={() => handleKyc(row.id, false)}>
+                拒绝KYC
+              </Button>
+            </>
+          )}
         </Space>
       ),
-      width: 120
+      width: 180
     }
   ];
 
@@ -380,6 +390,17 @@ export default function Admin() {\n  useEffect(() => {\n    const loadData = asy
 
   const handleEditUser = (user: any) => {
     Message.info('编辑功能开发中');
+  };
+
+  const handleKyc = async (userId: number, approved: boolean) => {
+    try {
+      await adminApi.user.reviewKyc(userId, approved);
+      Message.success('KYC 已更新');
+      const usersResult = await adminApi.user.getList({ page: 1, pageSize: 20 });
+      setUsers(usersResult.list || []);
+    } catch (error) {
+      Message.error('KYC 更新失败');
+    }
   };
 
   const handleApproveTxn = (txn: any) => {
@@ -662,7 +683,7 @@ export default function Admin() {\n  useEffect(() => {\n    const loadData = asy
                 </div>
 
                 <div className="pt-4">
-                  <Button theme="primary" size="large" block>
+                  <Button theme="primary" size="large" block onClick={saveSettings}>
                     保存设置
                   </Button>
                 </div>

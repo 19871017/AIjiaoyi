@@ -72,6 +72,12 @@ export const userApi = {
     body: JSON.stringify(data)
   }),
 
+  // KYC审核
+  reviewKyc: (userId: number, approved: boolean) => adminRequest<any>(`/admin/users/${userId}/kyc`, {
+    method: 'POST',
+    body: JSON.stringify({ approved })
+  }),
+
   // 删除用户
   delete: (userId: string) => adminRequest<void>(`/admin/users/${userId}`, {
     method: 'DELETE'
