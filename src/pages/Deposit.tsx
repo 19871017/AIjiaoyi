@@ -168,7 +168,6 @@ const Deposit = () => {
                 <li>• 单笔充值上限：100 万元</li>
                 <li>• 银行卡充值 T+1 到账</li>
                 <li>• USDT 充值实时到账</li>
-                <li>• 如有疑问，请联系客服</li>
               </ul>
             </div>
           </div>
