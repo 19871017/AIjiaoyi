@@ -219,3 +219,6 @@ export class RedisClient {
     return this.isConnected;
   }
 }
+
+const redis = new RedisClient();
+export default redis;
