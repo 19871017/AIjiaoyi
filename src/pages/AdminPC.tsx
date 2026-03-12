@@ -74,6 +74,9 @@ export default function AdminPC() {
   const [commissionStats, setCommissionStats] = useState<any>({});
   const [loading, setLoading] = useState(false);
 
+  const [riskOverview, setRiskOverview] = useState<any>({});
+  const [riskPositions, setRiskPositions] = useState<any[]>([]);
+
   const [dashboardStats, setDashboardStats] = useState<any[]>([]);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [pendingDeposits, setPendingDeposits] = useState(0);
@@ -147,6 +150,22 @@ export default function AdminPC() {
       setCommissionStats(statsData || {});
     } catch (error) {
       Message.error('加载分佣数据失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadRiskData = async () => {
+    try {
+      setLoading(true);
+      const [overview, positions] = await Promise.all([
+        adminApi.risk.getOverview(),
+        adminApi.risk.getPositions({ page: 1, pageSize: 50 })
+      ]);
+      setRiskOverview(overview || {});
+      setRiskPositions(positions || []);
+    } catch (error) {
+      Message.error('加载风控数据失败');
     } finally {
       setLoading(false);
     }
@@ -232,6 +251,8 @@ export default function AdminPC() {
       loadPositionsData();
     } else if (activeMenu === 'commission') {
       loadCommissionData();
+    } else if (activeMenu === 'risk') {
+      loadRiskData();
     } else if (activeMenu === 'settings') {
       loadFeeSettings();
     }
@@ -1211,19 +1232,19 @@ export default function AdminPC() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="p-4 bg-red-50 rounded-lg">
               <div className="text-sm text-gray-500 mb-2">高风险用户</div>
-              <div className="text-3xl font-bold text-red-600">12</div>
+              <div className="text-3xl font-bold text-red-600">{riskOverview.high_risk_count || 0}</div>
             </div>
             <div className="p-4 bg-orange-50 rounded-lg">
               <div className="text-sm text-gray-500 mb-2">预警用户</div>
-              <div className="text-3xl font-bold text-orange-600">45</div>
+              <div className="text-3xl font-bold text-orange-600">{riskOverview.warning_count || 0}</div>
             </div>
             <div className="p-4 bg-yellow-50 rounded-lg">
               <div className="text-sm text-gray-500 mb-2">今日强平</div>
-              <div className="text-3xl font-bold text-yellow-600">3</div>
+              <div className="text-3xl font-bold text-yellow-600">{riskOverview.today_liquidations || 0}</div>
             </div>
             <div className="p-4 bg-green-50 rounded-lg">
               <div className="text-sm text-gray-500 mb-2">安全用户</div>
-              <div className="text-3xl font-bold text-green-600">8,523</div>
+              <div className="text-3xl font-bold text-green-600">{riskOverview.safe_count || 0}</div>
             </div>
           </div>
         </Card>
@@ -1247,8 +1268,8 @@ export default function AdminPC() {
           </div>
           <Table
             columns={[
-              { colKey: 'userId', title: '用户ID', width: 100 },
-              { colKey: 'positionId', title: '持仓ID', width: 120 },
+              { colKey: 'user_id', title: '用户ID', width: 100 },
+              { colKey: 'id', title: '持仓ID', width: 120 },
               { colKey: 'symbol', title: '品种', width: 100 },
               {
                 colKey: 'direction',
@@ -1261,27 +1282,27 @@ export default function AdminPC() {
                 width: 80
               },
               {
-                colKey: 'marginRatio',
+                colKey: 'margin_ratio',
                 title: '保证金使用率',
                 cell: (row: any) => (
-                  <Tag theme={row.marginRatio > 80 ? 'danger' : row.marginRatio > 50 ? 'warning' : 'success'}>
-                    {row.marginRatio?.toFixed(1)}%
+                  <Tag theme={row.margin_ratio > 80 ? 'danger' : row.margin_ratio > 50 ? 'warning' : 'success'}>
+                    {row.margin_ratio?.toFixed(1)}%
                   </Tag>
                 ),
                 width: 120
               },
               {
-                colKey: 'unrealizedPnl',
+                colKey: 'floating_pl',
                 title: '浮动盈亏',
                 cell: (row: any) => (
-                  <span className={row.unrealizedPnl >= 0 ? 'text-green-600' : 'text-red-600'}>
-                    {formatCurrency(row.unrealizedPnl || 0)}
+                  <span className={row.floating_pl >= 0 ? 'text-green-600' : 'text-red-600'}>
+                    {formatCurrency(row.floating_pl || 0)}
                   </span>
                 ),
                 width: 120
               },
               {
-                colKey: 'riskLevel',
+                colKey: 'risk_level',
                 title: '风险等级',
                 cell: (row: any) => {
                   const riskMap: any = {
@@ -1289,7 +1310,7 @@ export default function AdminPC() {
                     warning: { label: '预警', theme: 'warning' },
                     safe: { label: '安全', theme: 'success' }
                   };
-                  const risk = riskMap[row.riskLevel] || { label: row.riskLevel || '未知', theme: 'default' };
+                  const risk = riskMap[row.risk_level] || { label: row.risk_level || '未知', theme: 'default' };
                   return <Tag theme={risk.theme}>{risk.label}</Tag>;
                 },
                 width: 100
@@ -1306,11 +1327,7 @@ export default function AdminPC() {
                 )
               }
             ]}
-            data={[
-              { userId: 'user001', positionId: 'POS001', symbol: 'XAUUSD', direction: 'LONG', marginRatio: 85.5, unrealizedPnl: -15200, riskLevel: 'danger' },
-              { userId: 'user002', positionId: 'POS002', symbol: 'XAGUSD', direction: 'SHORT', marginRatio: 78.2, unrealizedPnl: -8900, riskLevel: 'warning' },
-              { userId: 'user003', positionId: 'POS003', symbol: 'AU2406', direction: 'LONG', marginRatio: 92.1, unrealizedPnl: -25600, riskLevel: 'danger' }
-            ]}
+            data={riskPositions}
             stripe
             hover
             size="small"
