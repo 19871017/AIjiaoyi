@@ -29,7 +29,7 @@ import {
 import { formatCurrency, formatPrice } from '../utils/format';
 import { adminApi, settingsApi } from '../services/admin';
 
-export default function Admin() {\n  const loadSettings = async () => {\n    try {\n      const settings = await settingsApi.get();\n      setSystemSettings({\n        maintenanceMode: settings.MAINTENANCE_MODE === 'true' || settings.MAINTENANCE_MODE === true,\n        allowRegister: settings.ALLOW_REGISTER === 'true' || settings.ALLOW_REGISTER === true,\n        maxLeverage: parseFloat(settings.MAX_LEVERAGE) || 100,\n        minDeposit: parseFloat(settings.MIN_DEPOSIT) || 100,\n        minWithdraw: parseFloat(settings.MIN_WITHDRAW) || 100,\n        commissionRate: parseFloat(settings.COMMISSION_RATE) || 0.002,\n        platformFee: parseFloat(settings.PLATFORM_FEE) || 0.001\n      });\n    } catch (error) {\n      Message.error('加载系统设置失败');\n    }\n  };\n\n  const saveSettings = async () => {\n    try {\n      await settingsApi.update({\n        MAINTENANCE_MODE: String(systemSettings.maintenanceMode),\n        ALLOW_REGISTER: String(systemSettings.allowRegister),\n        MAX_LEVERAGE: String(systemSettings.maxLeverage),\n        MIN_DEPOSIT: String(systemSettings.minDeposit),\n        MIN_WITHDRAW: String(systemSettings.minWithdraw),\n        COMMISSION_RATE: String(systemSettings.commissionRate),\n        PLATFORM_FEE: String(systemSettings.platformFee)\n      });\n      Message.success('系统设置已保存');\n    } catch (error) {\n      Message.error('保存系统设置失败');\n    }\n  };\n\n  useEffect(() => {\n    const loadData = async () => {\n      try {\n        const stats = await adminApi.dashboard.getStats();\n        setStats({\n          totalUsers: stats.total_users ?? 0,\n          activeUsers: stats.active_users ?? 0,\n          totalAgents: stats.total_agents ?? 0,\n          todayOrders: stats.today_orders ?? 0,\n          openPositions: stats.open_positions ?? 0,\n          totalVolume: stats.total_volume ?? 0,\n          totalBalance: stats.total_balance ?? 0,\n          todayProfit: stats.today_profit ?? 0\n        });\n\n        const usersResult = await adminApi.user.getList({ page: 1, pageSize: 20 });\n        setUsers(usersResult.list || []);\n\n        const ordersResult = await adminApi.order.getList({ page: 1, pageSize: 20 });\n        setOrders(ordersResult.list || []);\n\n        const financeResult = await adminApi.finance.getList({ page: 1, pageSize: 20 });\n        setTransactions(financeResult.list || []);\n\n        await loadSettings();\n      } catch (error) {\n        Message.error('加载后台数据失败');\n      }\n    };\n\n    loadData();\n  }, []);
+export default function Admin() {\n  const loadSettings = async () => {\n    try {\n      const settings = await settingsApi.get();\n      setSystemSettings({\n        maintenanceMode: settings.MAINTENANCE_MODE === 'true' || settings.MAINTENANCE_MODE === true,\n        allowRegister: settings.ALLOW_REGISTER === 'true' || settings.ALLOW_REGISTER === true,\n        maxLeverage: parseFloat(settings.MAX_LEVERAGE) || 100,\n        minDeposit: parseFloat(settings.MIN_DEPOSIT) || 100,\n        minWithdraw: parseFloat(settings.MIN_WITHDRAW) || 100,\n        commissionRate: parseFloat(settings.COMMISSION_RATE) || 0.002,\n        platformFee: parseFloat(settings.PLATFORM_FEE) || 0.001,\n        aiBaseUrl: settings.AI_BASE_URL || '',\n        aiModelId: settings.AI_MODEL_ID || '',\n        aiApiKey: settings.AI_API_KEY || ''\n      });\n    } catch (error) {\n      Message.error('加载系统设置失败');\n    }\n  };\n\n  const saveSettings = async () => {\n    try {\n      await settingsApi.update({\n        MAINTENANCE_MODE: String(systemSettings.maintenanceMode),\n        ALLOW_REGISTER: String(systemSettings.allowRegister),\n        MAX_LEVERAGE: String(systemSettings.maxLeverage),\n        MIN_DEPOSIT: String(systemSettings.minDeposit),\n        MIN_WITHDRAW: String(systemSettings.minWithdraw),\n        COMMISSION_RATE: String(systemSettings.commissionRate),\n        PLATFORM_FEE: String(systemSettings.platformFee),\n        AI_BASE_URL: systemSettings.aiBaseUrl,\n        AI_MODEL_ID: systemSettings.aiModelId,\n        AI_API_KEY: systemSettings.aiApiKey\n      });\n      Message.success('系统设置已保存');\n    } catch (error) {\n      Message.error('保存系统设置失败');\n    }\n  };\n\n  useEffect(() => {\n    const loadData = async () => {\n      try {\n        const stats = await adminApi.dashboard.getStats();\n        setStats({\n          totalUsers: stats.total_users ?? 0,\n          activeUsers: stats.active_users ?? 0,\n          totalAgents: stats.total_agents ?? 0,\n          todayOrders: stats.today_orders ?? 0,\n          openPositions: stats.open_positions ?? 0,\n          totalVolume: stats.total_volume ?? 0,\n          totalBalance: stats.total_balance ?? 0,\n          todayProfit: stats.today_profit ?? 0\n        });\n\n        const usersResult = await adminApi.user.getList({ page: 1, pageSize: 20 });\n        setUsers(usersResult.list || []);\n\n        const ordersResult = await adminApi.order.getList({ page: 1, pageSize: 20 });\n        setOrders(ordersResult.list || []);\n\n        const financeResult = await adminApi.finance.getList({ page: 1, pageSize: 20 });\n        setTransactions(financeResult.list || []);\n\n        await loadSettings();\n      } catch (error) {\n        Message.error('加载后台数据失败');\n      }\n    };\n\n    loadData();\n  }, []);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
 
@@ -68,7 +68,10 @@ export default function Admin() {\n  const loadSettings = async () => {\n    try
     minDeposit: 100,
     minWithdraw: 100,
     commissionRate: 0.002,
-    platformFee: 0.001
+    platformFee: 0.001,
+    aiBaseUrl: '',
+    aiModelId: '',
+    aiApiKey: ''
   });
 
   // 计算统计数据
@@ -659,6 +662,45 @@ export default function Admin() {\n  const loadSettings = async () => {\n    try
                 </div>
 
                 <div>
+                <div>
+                  <h3 className="text-sm font-semibold text-neutral-100 mb-4">AI 设置</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between py-2 border-b border-neutral-800">
+                      <div>
+                        <div className="text-sm text-neutral-200">AI Base URL</div>
+                        <div className="text-xs text-neutral-500">OpenAI 兼容接口地址</div>
+                      </div>
+                      <Input
+                        value={systemSettings.aiBaseUrl}
+                        onChange={(v) => setSystemSettings({ ...systemSettings, aiBaseUrl: v as string })}
+                        style={{ width: 320 }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-b border-neutral-800">
+                      <div>
+                        <div className="text-sm text-neutral-200">AI 模型 ID</div>
+                        <div className="text-xs text-neutral-500">如：your-provider/model-id</div>
+                      </div>
+                      <Input
+                        value={systemSettings.aiModelId}
+                        onChange={(v) => setSystemSettings({ ...systemSettings, aiModelId: v as string })}
+                        style={{ width: 320 }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-b border-neutral-800">
+                      <div>
+                        <div className="text-sm text-neutral-200">AI API Key</div>
+                        <div className="text-xs text-neutral-500">仅本地存储</div>
+                      </div>
+                      <Input
+                        type="password"
+                        value={systemSettings.aiApiKey}
+                        onChange={(v) => setSystemSettings({ ...systemSettings, aiApiKey: v as string })}
+                        style={{ width: 320 }}
+                      />
+                    </div>
+                  </div>
+                </div>
                   <h3 className="text-sm font-semibold text-neutral-100 mb-4">费率设置</h3>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between py-2 border-b border-neutral-800">
@@ -765,5 +807,7 @@ export default function Admin() {\n  const loadSettings = async () => {\n    try
     </div>
   );
 }
+
+
 
 

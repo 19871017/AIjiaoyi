@@ -1,4 +1,4 @@
--- ====================================================
+﻿-- ====================================================
 -- 贵金属期货交易系统 - 数据库初始化脚本
 -- PostgreSQL 14+
 -- ====================================================
@@ -707,3 +707,4 @@ INSERT INTO products (symbol, name, category_id, base_currency, quote_currency, 
 -- ====================================================
 -- 创建完成
 -- ====================================================
+\n-- AI配置\nINSERT INTO system_configs (config_key, config_value, config_type, description, is_public) VALUES\n('AI_BASE_URL','https://api.example.com/v1','string','AI Base URL',false),\n('AI_MODEL_ID','your-provider/model-id','string','AI模型ID',false),\n('AI_API_KEY','', 'string','AI API Key',false);\n
