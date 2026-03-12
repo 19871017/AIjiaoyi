@@ -76,6 +76,7 @@ export default function AdminPC() {
 
   const [riskOverview, setRiskOverview] = useState<any>({});
   const [riskPositions, setRiskPositions] = useState<any[]>([]);
+  const [riskSettings, setRiskSettings] = useState<any>({});
 
   const [dashboardStats, setDashboardStats] = useState<any[]>([]);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
@@ -158,12 +159,14 @@ export default function AdminPC() {
   const loadRiskData = async () => {
     try {
       setLoading(true);
-      const [overview, positions] = await Promise.all([
+      const [overview, positions, settings] = await Promise.all([
         adminApi.risk.getOverview(),
-        adminApi.risk.getPositions({ page: 1, pageSize: 50 })
+        adminApi.risk.getPositions({ page: 1, pageSize: 50 }),
+        adminApi.risk.getSettings()
       ]);
       setRiskOverview(overview || {});
       setRiskPositions(positions || []);
+      setRiskSettings(settings || {});
     } catch (error) {
       Message.error('加载风控数据失败');
     } finally {
@@ -178,6 +181,15 @@ export default function AdminPC() {
       await loadRiskData();
     } catch (error) {
       Message.error('强平失败');
+    }
+  };
+
+  const saveRiskSettings = async () => {
+    try {
+      await adminApi.risk.updateSettings(riskSettings);
+      Message.success('风控设置已保存');
+    } catch (error) {
+      Message.error('保存风控设置失败');
     }
   };
 
@@ -1354,32 +1366,32 @@ export default function AdminPC() {
                 <div className="text-sm font-medium text-gray-900">自动强平</div>
                 <div className="text-xs text-gray-500 mt-1">当保证金使用率超过阈值时自动强平</div>
               </div>
-              <Switch defaultValue={true} size="large" />
+              <Switch value={!!riskSettings.enable_auto_close} size="large" onChange={(v) => setRiskSettings({ ...riskSettings, enable_auto_close: v })} />
             </div>
             <div className="flex items-center justify-between py-3 border-b">
               <div>
                 <div className="text-sm font-medium text-gray-900">强平阈值</div>
                 <div className="text-xs text-gray-500 mt-1">触发自动强平的保证金使用率</div>
               </div>
-              <div className="text-lg font-bold text-red-600 font-mono">90%</div>
+              <div className="text-lg font-bold text-red-600 font-mono">{riskSettings.force_close_threshold || 90}%</div>
             </div>
             <div className="flex items-center justify-between py-3 border-b">
               <div>
                 <div className="text-sm font-medium text-gray-900">预警阈值</div>
                 <div className="text-xs text-gray-500 mt-1">触发系统预警的保证金使用率</div>
               </div>
-              <div className="text-lg font-bold text-orange-600 font-mono">70%</div>
+              <div className="text-lg font-bold text-orange-600 font-mono">{riskSettings.warning_threshold || 70}%</div>
             </div>
             <div className="flex items-center justify-between py-3">
               <div>
                 <div className="text-sm font-medium text-gray-900">风控检查频率</div>
                 <div className="text-xs text-gray-500 mt-1">系统检查用户风险状态的频率</div>
               </div>
-              <div className="text-lg font-bold text-blue-600 font-mono">5秒/次</div>
+              <div className="text-lg font-bold text-blue-600 font-mono">{riskSettings.check_interval_seconds || 5}秒/次</div>
             </div>
           </div>
           <div className="mt-6 flex justify-end">
-            <Button theme="primary" size="large">
+            <Button theme="primary" size="large" onClick={saveRiskSettings}>
               保存设置
             </Button>
           </div>

@@ -206,7 +206,7 @@ export const agentApi = {
 
   // 创建代理
   create: (data: any) => adminRequest<any>('/admin/agents', {
-    method: 'PUT',
+    method: 'POST',
     body: JSON.stringify(data)
   }),
 
@@ -357,6 +357,23 @@ export const feesApi = {
 };
 
 // 导出所有API
+export const riskApi = {
+  getOverview: () => adminRequest<any>('/admin/risk/overview'),
+  getPositions: (params?: { page?: number; pageSize?: number }) => {
+    const query = new URLSearchParams(params as any).toString();
+    return adminRequest<any[]>(`/admin/risk/positions${query ? '?' + query : ''}`);
+  },
+  forceClose: (data: { positionId: number; reason?: string }) => adminRequest<void>('/admin/risk/force-close', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
+  getSettings: () => adminRequest<any>('/admin/risk/settings'),
+  updateSettings: (settings: any) => adminRequest<void>('/admin/risk/settings', {
+    method: 'PUT',
+    body: JSON.stringify(settings)
+  })
+};
+
 export const adminApi = {
   dashboard: dashboardApi,
   user: userApi,
@@ -367,7 +384,8 @@ export const adminApi = {
   settings: settingsApi,
   product: productApi,
   commission: commissionApi,
-  fees: feesApi
+  fees: feesApi,
+  risk: riskApi
 };
 
 export default adminApi;
