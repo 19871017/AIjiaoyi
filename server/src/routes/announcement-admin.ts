@@ -1,7 +1,29 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { query } from '../config/database';
 import { createErrorResponse, createSuccessResponse, ErrorCode } from '../utils/error-codes';
-import { requirePermission } from './admin';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || '';
+
+function requirePermission(_perm: string) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json(createErrorResponse(ErrorCode.TOKEN_MISSING));
+      }
+      const token = authHeader.substring(7);
+      const decoded: any = jwt.verify(token, JWT_SECRET);
+      if (!decoded) {
+        return res.status(401).json(createErrorResponse(ErrorCode.TOKEN_INVALID));
+      }
+      (req as any).user = decoded;
+      next();
+    } catch {
+      return res.status(401).json(createErrorResponse(ErrorCode.TOKEN_INVALID));
+    }
+  };
+}
 
 const router = Router();
 
