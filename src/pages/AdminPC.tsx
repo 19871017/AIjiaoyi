@@ -536,7 +536,11 @@ export default function AdminPC() {
             )
           }
         ]}
-        data={orders}
+        data={orders.map((o: any) => ({
+          ...o,
+          status: o.status_text || o.status,
+          payment_method: o.payment_method_text || o.payment_method
+        }))}
         stripe
         hover
         size="small"
@@ -598,7 +602,8 @@ export default function AdminPC() {
                 completed: { label: '已完成', theme: 'success' },
                 rejected: { label: '已拒绝', theme: 'danger' }
               };
-              const status = statusMap[row.status] || { label: row.status || '未知', theme: 'default' };
+              const statusKey = row.status_text || row.status;
+              const status = statusMap[statusKey] || { label: statusKey || '未知', theme: 'default' };
               return <Tag theme={status.theme}>{status.label}</Tag>;
             },
             width: 100
@@ -620,7 +625,11 @@ export default function AdminPC() {
             )
           }
         ]}
-        data={finance}
+        data={finance.map((t: any) => ({
+          ...t,
+          status: t.status_text || t.status,
+          payment_method: t.payment_method_text || t.payment_method
+        }))}
         stripe
         hover
         size="small"

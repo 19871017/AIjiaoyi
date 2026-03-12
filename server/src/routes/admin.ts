@@ -219,7 +219,7 @@ router.get('/dashboard/pending', requirePermission('all'), async (req: Request, 
     // 待审核KYC
     const pendingKyc = await query(
       `SELECT COUNT(*) as count FROM users
-       WHERE kyc_status = 'pending'`
+       WHERE kyc_status = 0`
     );
 
     res.json({
@@ -1047,10 +1047,28 @@ router.get('/finance', requirePermission('finance:view'), async (req: Request, r
     const depositWhereClause = depositWhere.length ? `WHERE ${depositWhere.join(' AND ')}` : '';
     const withdrawWhereClause = withdrawWhere.length ? `WHERE ${withdrawWhere.join(' AND ')}` : '';
 
-    const depositQuery = `SELECT id, order_number as record_number, user_id, amount, payment_method, status, created_at, 'deposit' as type
-                          FROM deposit_orders ${depositWhereClause}`;
-    const withdrawQuery = `SELECT id, order_number as record_number, user_id, amount, payment_method, status, created_at, 'withdraw' as type
-                           FROM withdraw_orders ${withdrawWhereClause}`;
+    const depositQuery = `SELECT d.id, d.order_number as record_number, d.user_id, d.amount,
+                                  d.payment_method,
+                                  CASE d.payment_method WHEN 1 THEN 'USDT' WHEN 2 THEN 'BANK' WHEN 3 THEN 'ALIPAY' ELSE 'UNKNOWN' END as payment_method_text,
+                                  d.status,
+                                  CASE d.status WHEN 0 THEN 'pending' WHEN 1 THEN 'completed' WHEN 2 THEN 'rejected' ELSE 'unknown' END as status_text,
+                                  d.created_at,
+                                  u.username, u.real_name,
+                                  'deposit' as type
+                           FROM deposit_orders d
+                           LEFT JOIN users u ON d.user_id = u.id
+                           ${depositWhereClause}`;
+    const withdrawQuery = `SELECT w.id, w.order_number as record_number, w.user_id, w.amount,
+                                   w.payment_method,
+                                   CASE w.payment_method WHEN 1 THEN 'USDT' WHEN 2 THEN 'BANK' WHEN 3 THEN 'ALIPAY' ELSE 'UNKNOWN' END as payment_method_text,
+                                   w.status,
+                                   CASE w.status WHEN 0 THEN 'pending' WHEN 2 THEN 'rejected' WHEN 3 THEN 'completed' ELSE 'unknown' END as status_text,
+                                   w.created_at,
+                                   u.username, u.real_name,
+                                   'withdraw' as type
+                           FROM withdraw_orders w
+                           LEFT JOIN users u ON w.user_id = u.id
+                           ${withdrawWhereClause}`;
 
     const unionQuery = [
       type === 'withdraw' ? null : depositQuery,

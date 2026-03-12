@@ -339,7 +339,8 @@ export default function Admin() {\n  useEffect(() => {\n    const loadData = asy
           completed: { label: '已完成', theme: 'success' },
           rejected: { label: '已拒绝', theme: 'danger' }
         };
-        const status = statusMap[row.status] || statusMap.pending;
+        const statusKey = row.status_text || row.status;
+        const status = statusMap[statusKey] || statusMap.pending;
         return <Tag theme={status.theme}>{status.label}</Tag>;
       },
       width: 100
@@ -560,7 +561,11 @@ export default function Admin() {\n  useEffect(() => {\n    const loadData = asy
               </div>
               <Table
                 columns={transactionColumns}
-                data={filteredTxns}
+                data={filteredTxns.map((t: any) => ({
+                  ...t,
+                  status: t.status_text || t.status,
+                  payment_method: t.payment_method_text || t.payment_method
+                }))}
                 stripe
                 hover
                 size="small"
