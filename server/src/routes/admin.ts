@@ -146,16 +146,47 @@ router.get('/dashboard/stats', requirePermission('all'), async (req: Request, re
        WHERE created_at >= CURRENT_DATE AND status IN (1, 2)`
     );
 
+    const users = userStats.rows[0];
+    const agents = agentStats.rows[0];
+    const finance = financeStats.rows[0];
+    const orders = orderStats.rows[0];
+    const positions = positionStats.rows[0];
+    const volume = volumeStats.rows[0];
+
     res.json({
       code: 0,
       message: 'Success',
       data: {
-        users: userStats.rows[0],
-        agents: agentStats.rows[0],
-        finance: financeStats.rows[0],
-        orders: orderStats.rows[0],
-        positions: positionStats.rows[0],
-        volume: volumeStats.rows[0]
+        total_users: Number(users.total_users || 0),
+        active_users: Number(users.active_users || 0),
+        verified_users: Number(users.verified_users || 0),
+        today_new_users: Number(users.today_new_users || 0),
+
+        total_agents: Number(agents.total_agents || 0),
+        active_agents: Number(agents.active_agents || 0),
+        level_1_agents: Number(agents.level_1_agents || 0),
+        level_2_agents: Number(agents.level_2_agents || 0),
+        total_commission: Number(agents.total_commission || 0),
+
+        total_balance: Number(finance.total_balance || 0),
+        total_available: Number(finance.total_available || 0),
+        total_frozen: Number(finance.total_frozen || 0),
+        total_deposit: Number(finance.total_deposit || 0),
+        total_withdraw: Number(finance.total_withdraw || 0),
+
+        total_orders: Number(orders.total_orders || 0),
+        pending_orders: Number(orders.pending_orders || 0),
+        filled_orders: Number(orders.filled_orders || 0),
+        closed_orders: Number(orders.closed_orders || 0),
+        total_profit: Number(orders.total_profit || 0),
+
+        open_positions: Number(positions.total_positions || 0),
+        total_lot_size: Number(positions.total_lot_size || 0),
+        total_floating_pl: Number(positions.total_floating_pl || 0),
+        losing_positions: Number(positions.losing_positions || 0),
+
+        total_volume: Number(volume.total_volume || 0),
+        total_trades: Number(volume.total_trades || 0)
       },
       timestamp: Date.now()
     });
@@ -177,14 +208,12 @@ router.get('/dashboard/pending', requirePermission('all'), async (req: Request, 
   try {
     // 待审核充值
     const pendingDeposits = await query(
-      `SELECT COUNT(*) as count FROM financial_records
-       WHERE type = 'deposit' AND status = 'pending'`
+      `SELECT COUNT(*) as count FROM deposit_orders WHERE status = 0`
     );
 
     // 待审核提现
     const pendingWithdrawals = await query(
-      `SELECT COUNT(*) as count FROM financial_records
-       WHERE type = 'withdraw' AND status = 'pending'`
+      `SELECT COUNT(*) as count FROM withdraw_orders WHERE status = 0`
     );
 
     // 待审核KYC
@@ -963,57 +992,81 @@ router.get('/finance', requirePermission('finance:view'), async (req: Request, r
     const { page = 1, pageSize = 20, type, status, user_id, start_date, end_date } = req.query;
     const pageNum = parseInt(page as string);
     const pageSizeNum = parseInt(pageSize as string);
-
-    let whereClause = 'WHERE 1=1';
-    const params: any[] = [];
-    let paramIndex = 1;
-
-    if (type) {
-      whereClause += ` AND type = $${paramIndex}`;
-      params.push(type);
-      paramIndex++;
-    }
-
-    if (status) {
-      whereClause += ` AND status = $${paramIndex}`;
-      params.push(status);
-      paramIndex++;
-    }
-
-    if (user_id) {
-      whereClause += ` AND user_id = $${paramIndex}`;
-      params.push(user_id);
-      paramIndex++;
-    }
-
-    if (start_date) {
-      whereClause += ` AND created_at >= $${paramIndex}`;
-      params.push(start_date);
-      paramIndex++;
-    }
-
-    if (end_date) {
-      whereClause += ` AND created_at <= $${paramIndex}`;
-      params.push(end_date);
-      paramIndex++;
-    }
-
     const offset = (pageNum - 1) * pageSizeNum;
 
-    const countResult = await query(
-      `SELECT COUNT(*) as total FROM financial_records ${whereClause}`,
-      params
-    );
+    const depositWhere: string[] = [];
+    const depositParams: any[] = [];
+    let depositIdx = 1;
+
+    if (type && type !== 'deposit') {
+      // 仅查withdraw
+    } else {
+      if (status !== undefined && status !== '') {
+        depositWhere.push(`status = $${depositIdx++}`);
+        depositParams.push(Number(status));
+      }
+      if (user_id) {
+        depositWhere.push(`user_id = $${depositIdx++}`);
+        depositParams.push(user_id);
+      }
+      if (start_date) {
+        depositWhere.push(`created_at >= $${depositIdx++}`);
+        depositParams.push(start_date);
+      }
+      if (end_date) {
+        depositWhere.push(`created_at <= $${depositIdx++}`);
+        depositParams.push(end_date);
+      }
+    }
+
+    const withdrawWhere: string[] = [];
+    const withdrawParams: any[] = [];
+    let withdrawIdx = 1;
+
+    if (type && type !== 'withdraw') {
+      // 仅查deposit
+    } else {
+      if (status !== undefined && status !== '') {
+        withdrawWhere.push(`status = $${withdrawIdx++}`);
+        withdrawParams.push(Number(status));
+      }
+      if (user_id) {
+        withdrawWhere.push(`user_id = $${withdrawIdx++}`);
+        withdrawParams.push(user_id);
+      }
+      if (start_date) {
+        withdrawWhere.push(`created_at >= $${withdrawIdx++}`);
+        withdrawParams.push(start_date);
+      }
+      if (end_date) {
+        withdrawWhere.push(`created_at <= $${withdrawIdx++}`);
+        withdrawParams.push(end_date);
+      }
+    }
+
+    const depositWhereClause = depositWhere.length ? `WHERE ${depositWhere.join(' AND ')}` : '';
+    const withdrawWhereClause = withdrawWhere.length ? `WHERE ${withdrawWhere.join(' AND ')}` : '';
+
+    const depositQuery = `SELECT id, order_number as record_number, user_id, amount, payment_method, status, created_at, 'deposit' as type
+                          FROM deposit_orders ${depositWhereClause}`;
+    const withdrawQuery = `SELECT id, order_number as record_number, user_id, amount, payment_method, status, created_at, 'withdraw' as type
+                           FROM withdraw_orders ${withdrawWhereClause}`;
+
+    const unionQuery = [
+      type === 'withdraw' ? null : depositQuery,
+      type === 'deposit' ? null : withdrawQuery
+    ].filter(Boolean).join(' UNION ALL ');
+
+    const countResult = await query(`SELECT COUNT(*) as total FROM (${unionQuery}) t`, [
+      ...(type === 'withdraw' ? [] : depositParams),
+      ...(type === 'deposit' ? [] : withdrawParams)
+    ]);
 
     const total = parseInt(countResult.rows[0].total);
 
     const dataResult = await query(
-      `SELECT fr.*, u.username, u.real_name
-       FROM financial_records fr
-       LEFT JOIN users u ON fr.user_id = u.id
-       ${whereClause}
-       ORDER BY fr.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
-      [...params, pageSizeNum, offset]
+      `${unionQuery} ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
+      [pageSizeNum, offset]
     );
 
     res.json({
@@ -1047,7 +1100,7 @@ router.post('/finance/deposit/:id/approve', requirePermission('finance:approve')
     const { id } = req.params;
 
     const record = await query(
-      `SELECT * FROM financial_records WHERE id = $1 AND type = 'deposit' AND status = 'pending'`,
+      `SELECT * FROM deposit_orders WHERE id = $1 AND status = 0`,
       [id]
     );
 
@@ -1060,9 +1113,9 @@ router.post('/finance/deposit/:id/approve', requirePermission('finance:approve')
       });
     }
 
-    // 更新财务记录状态
+    // 更新充值订单状态
     await query(
-      `UPDATE financial_records SET status = 'completed', processed_at = CURRENT_TIMESTAMP WHERE id = $1`,
+      `UPDATE deposit_orders SET status = 1, approved_at = CURRENT_TIMESTAMP WHERE id = $1`,
       [id]
     );
 
@@ -1100,7 +1153,7 @@ router.post('/finance/deposit/:id/reject', requirePermission('finance:approve'),
     const { reason } = req.body;
 
     const record = await query(
-      `SELECT * FROM financial_records WHERE id = $1 AND type = 'deposit' AND status = 'pending'`,
+      `SELECT * FROM deposit_orders WHERE id = $1 AND status = 0`,
       [id]
     );
 
@@ -1114,7 +1167,7 @@ router.post('/finance/deposit/:id/reject', requirePermission('finance:approve'),
     }
 
     await query(
-      `UPDATE financial_records SET status = 'rejected', reject_reason = $1, processed_at = CURRENT_TIMESTAMP WHERE id = $2`,
+      `UPDATE deposit_orders SET status = 2, remark = $1, approved_at = CURRENT_TIMESTAMP WHERE id = $2`,
       [reason, id]
     );
 
@@ -1145,7 +1198,7 @@ router.post('/finance/withdraw/:id/approve', requirePermission('finance:approve'
     const { id } = req.params;
 
     const record = await query(
-      `SELECT * FROM financial_records WHERE id = $1 AND type = 'withdraw' AND status = 'pending'`,
+      `SELECT * FROM withdraw_orders WHERE id = $1 AND status = 0`,
       [id]
     );
 
@@ -1191,9 +1244,9 @@ router.post('/finance/withdraw/:id/approve', requirePermission('finance:approve'
     try {
       await client.query('BEGIN');
 
-      // 更新财务记录状态
+      // 更新提现订单状态
       await client.query(
-        `UPDATE financial_records SET status = 'completed', processed_at = CURRENT_TIMESTAMP WHERE id = $1`,
+        `UPDATE withdraw_orders SET status = 3, transferred_at = CURRENT_TIMESTAMP WHERE id = $1`,
         [id]
       );
 
@@ -1239,7 +1292,7 @@ router.post('/finance/withdraw/:id/reject', requirePermission('finance:approve')
     const { reason } = req.body;
 
     const record = await query(
-      `SELECT * FROM financial_records WHERE id = $1 AND type = 'withdraw' AND status = 'pending'`,
+      `SELECT * FROM withdraw_orders WHERE id = $1 AND status = 0`,
       [id]
     );
 
@@ -1259,7 +1312,7 @@ router.post('/finance/withdraw/:id/reject', requirePermission('finance:approve')
     );
 
     await query(
-      `UPDATE financial_records SET status = 'rejected', reject_reason = $1, processed_at = CURRENT_TIMESTAMP WHERE id = $2`,
+      `UPDATE withdraw_orders SET status = 2, remark = $1, approved_at = CURRENT_TIMESTAMP WHERE id = $2`,
       [reason, id]
     );
 

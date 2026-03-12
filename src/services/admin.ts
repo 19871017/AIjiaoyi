@@ -62,7 +62,7 @@ export const userApi = {
 
   // 创建用户
   create: (data: any) => adminRequest<any>('/admin/users', {
-    method: 'PUT',
+    method: 'POST',
     body: JSON.stringify(data)
   }),
 
@@ -206,7 +206,7 @@ export const agentApi = {
 
   // 更新代理
   update: (agentId: string, data: any) => adminRequest<any>(`/admin/agents/${agentId}`, {
-    method: 'PATCH',
+    method: 'PUT',
     body: JSON.stringify(data)
   }),
 
