@@ -68,6 +68,8 @@ export default function Market() {
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
   const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
   const [volume, setVolume] = useState<number>(1);
+  const [showCustomVolume, setShowCustomVolume] = useState(false);
+  const [customVolume, setCustomVolume] = useState<string>('');
   const [limitPrice, setLimitPrice] = useState<string>('');
   const [leverage, setLeverage] = useState<number | null>(10);
   const [takeProfit, setTakeProfit] = useState<string>('');
@@ -492,7 +494,18 @@ export default function Market() {
   };
 
   // 快速设置手数
-  const quickVolumeSet = (v: number) => setVolume(v);
+  const quickVolumeSet = (v: number) => {
+    setVolume(v);
+    setShowCustomVolume(false);
+    setCustomVolume('');
+  };
+
+  const applyCustomVolume = () => {
+    const val = parseFloat(customVolume);
+    if (!Number.isFinite(val)) return;
+    const clamped = Math.min(100, Math.max(0.01, val));
+    setVolume(parseFloat(clamped.toFixed(2)));
+  };
   
   // 快速设置杠杆（1表示无杠杆，即1倍杠杆）
   const leverageOptions = [1, 10, 20, 50, 100];
@@ -1576,7 +1589,7 @@ export default function Market() {
                       key={v}
                       onClick={() => quickVolumeSet(v)}
                       className={`flex-1 py-2 rounded text-xs font-medium transition-colors ${
-                        volume === v
+                        volume === v && !showCustomVolume
                           ? 'bg-amber-600 text-white'
                           : 'bg-neutral-950 text-neutral-500 hover:bg-neutral-800'
                       }`}
@@ -1584,7 +1597,30 @@ export default function Market() {
                       {v}
                     </button>
                   ))}
+                  <button
+                    onClick={() => setShowCustomVolume(true)}
+                    className={`flex-1 py-2 rounded text-xs font-medium transition-colors ${
+                      showCustomVolume
+                        ? 'bg-amber-600 text-white'
+                        : 'bg-neutral-950 text-neutral-500 hover:bg-neutral-800'
+                    }`}
+                  >
+                    自定义
+                  </button>
                 </div>
+                {showCustomVolume && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <Input
+                      value={customVolume}
+                      onChange={(val) => setCustomVolume(val as string)}
+                      placeholder="0.01 - 100"
+                      className="!bg-neutral-950"
+                    />
+                    <Button size="small" theme="primary" onClick={applyCustomVolume}>
+                      应用
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* 止盈止损 */}
