@@ -1534,7 +1534,8 @@ const renderSettings = () => (
         return renderCommission();
       case 'risk':
         return renderRisk();
-      case 'settings':\n        return renderSettings();\n      case 'announcements':\n        return renderAnnouncements();
+      case 'settings':\n        return renderSettings();\n      case 'announcements':
+        return renderAnnouncements();
       default:
         return renderDashboard();
     }
@@ -1632,6 +1633,7 @@ const renderSettings = () => (
     </div>
   );
 }
+
 
 
 
