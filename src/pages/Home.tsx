@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from 'tdesign-react';
 import { SoundIcon, CalendarIcon, WalletIcon, ChartIcon } from 'tdesign-icons-react';
@@ -206,103 +206,101 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="finance-app min-h-screen bg-gradient-to-b from-black to-neutral-950 pb-20 pt-2">
-      <div className="max-w-7xl mx-auto px-3">
-        {/* Header - 极简专业 */}
-        <header className="flex justify-between items-center mb-3 py-2">
+    <div className="finance-app min-h-screen bg-[#0b0f14] pb-20 pt-3">
+      <div className="max-w-7xl mx-auto px-4">
+        {/* Header - 券商风格 */}
+        <header className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-amber-800 to-yellow-700 rounded flex items-center justify-center">
-              <span className="text-sm font-bold text-black">G</span>
+            <div className="w-8 h-8 bg-[#1a2330] rounded flex items-center justify-center border border-[#273241]">
+              <span className="text-xs font-bold text-[#c9d4e5]">PM</span>
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white tracking-wide">贵金属交易</h1>
-              <p className="text-xs text-neutral-600">专业交易系统</p>
+              <h1 className="text-base font-semibold text-[#e6edf7] tracking-wide">专业交易终端</h1>
+              <p className="text-xs text-[#7a889c]">Precious Metals Desk</p>
             </div>
           </div>
           {/* 连接状态指示器 */}
           <div
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${
-              isConnected ? 'bg-green-900/30' : 'bg-red-900/30'
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${
+              isConnected ? 'bg-[#0f1b14] border-[#1f3a2a]' : 'bg-[#1b1212] border-[#3a1f1f]'
             }`}
           >
             <div
-              className={`w-2.5 h-2.5 rounded-full ${
-                isConnected
-                  ? 'bg-green-500 animate-pulse'
-                  : 'bg-red-500 animate-pulse'
+              className={`w-2 h-2 rounded-full ${
+                isConnected ? 'bg-green-500' : 'bg-red-500'
               }`}
             />
-            <span className={`text-xs ${isConnected ? 'text-green-500' : 'text-red-500'}`}>
+            <span className={`text-xs ${isConnected ? 'text-green-400' : 'text-red-400'}`}>
               {isConnected ? '已联网' : '未联网'}
             </span>
           </div>
         </header>
 
-        {/* 科技感公告栏 - 左滑动效果 */}
+        {/* 公告栏 */}
         <TechNoticeBar
           announcements={announcements}
-          icon={<SoundIcon size="14px" className="text-amber-500" />}
+          icon={<SoundIcon size="14px" className="text-[#9fb0c5]" />}
         />
 
-        {/* 账户概览 - 简洁资金卡片 - 响应式布局 */}
-        <div className="mb-3 grid grid-cols-2 md:grid-cols-4 gap-2">
-          <div className="bg-neutral-900 rounded p-2.5 border border-neutral-800">
-            <p className="text-xs text-neutral-400 mb-1.5 font-medium">总资产</p>
-            <p className="text-sm font-medium asset-value font-mono">¥1,250,000</p>
+        {/* 账户概览 - 券商风格 */}
+        <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-[#0f141b] rounded border border-[#1e2633] p-3">
+            <p className="text-[11px] text-[#7a889c] mb-1">总资产</p>
+            <p className="text-sm font-semibold text-[#e6edf7] font-mono">¥1,250,000</p>
           </div>
-          <div className="bg-neutral-900 rounded p-2.5 border border-neutral-800">
-            <p className="text-xs text-neutral-400 mb-1.5 font-medium">可用</p>
-            <p className="text-sm font-medium asset-value font-mono">¥850,000</p>
+          <div className="bg-[#0f141b] rounded border border-[#1e2633] p-3">
+            <p className="text-[11px] text-[#7a889c] mb-1">可用资金</p>
+            <p className="text-sm font-semibold text-[#e6edf7] font-mono">¥850,000</p>
           </div>
-          <div className="bg-neutral-900 rounded p-2.5 border border-neutral-800">
-            <p className="text-xs text-neutral-400 mb-1.5 font-medium">占用</p>
-            <p className="text-sm font-medium asset-value font-mono">¥400,000</p>
+          <div className="bg-[#0f141b] rounded border border-[#1e2633] p-3">
+            <p className="text-[11px] text-[#7a889c] mb-1">占用保证金</p>
+            <p className="text-sm font-semibold text-[#e6edf7] font-mono">¥400,000</p>
           </div>
-          <div className="bg-neutral-900 rounded p-2.5 border border-neutral-800">
-            <p className="text-xs text-neutral-400 mb-1.5 font-medium">今日</p>
-            <p className="text-sm font-medium asset-profit font-mono">+¥12,500</p>
+          <div className="bg-[#0f141b] rounded border border-[#1e2633] p-3">
+            <p className="text-[11px] text-[#7a889c] mb-1">今日盈亏</p>
+            <p className="text-sm font-semibold text-[#3bd187] font-mono">+¥12,500</p>
           </div>
         </div>
 
         {/* 实时行情列表 - 专业行情条样式 */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-2.5 px-1">
-            <span className="text-xs text-neutral-300 tracking-wide font-medium">实时行情</span>
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2 px-1">
+            <span className="text-xs text-[#9fb0c5] tracking-wide font-semibold">实时行情</span>
             <button
               onClick={() => navigate('/market')}
-              className="text-xs text-neutral-400 hover:text-neutral-200 transition-colors font-medium"
+              className="text-xs text-[#7a889c] hover:text-[#c9d4e5] transition-colors font-medium"
             >
               全部
             </button>
           </div>
-          <Card className="!bg-neutral-900 !border-neutral-800 !p-0">
-            <div className="divide-y divide-neutral-800">
+          <Card className="!bg-[#0f141b] !border-[#1e2633] !p-0">
+            <div className="divide-y divide-[#1e2633]">
               {marketData.map((item) => (
                 <div
                   key={item.symbol}
                   onClick={() => navigate(`/market?symbol=${item.symbol}`)}
-                  className="group px-4 py-4 hover:bg-neutral-800/50 transition-colors cursor-pointer"
+                  className="group px-4 py-3 hover:bg-[#141b24] transition-colors cursor-pointer"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0 pr-4">
-                      <div className="flex items-center gap-2.5 mb-2">
-                        <h3 className="product-name-small transition-colors">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-sm font-semibold text-[#e6edf7]">
                           {item.name}
                         </h3>
-                        <span className="product-code">{item.symbol}</span>
+                        <span className="text-[11px] text-[#7a889c]">{item.symbol}</span>
                       </div>
-                      <div className="flex gap-4 text-xs text-neutral-500">
-                        <span className="font-medium">高 <span className="text-neutral-400 font-mono">{item.high > 0 ? formatPrice(item.high) : '--'}</span></span>
-                        <span className="font-medium">低 <span className="text-neutral-400 font-mono">{item.low > 0 ? formatPrice(item.low) : '--'}</span></span>
+                      <div className="flex gap-4 text-[11px] text-[#7a889c]">
+                        <span className="font-medium">高 <span className="text-[#b5c2d6] font-mono">{item.high > 0 ? formatPrice(item.high) : '--'}</span></span>
+                        <span className="font-medium">低 <span className="text-[#b5c2d6] font-mono">{item.low > 0 ? formatPrice(item.low) : '--'}</span></span>
                         <span className="font-medium">{item.volume > 0 ? formatVolume(item.volume) : '--'}</span>
                       </div>
                     </div>
                     <div className="text-right min-w-fit">
-                      <p className="text-xl font-medium text-white font-mono">
+                      <p className="text-lg font-semibold text-[#e6edf7] font-mono">
                         {formatPrice(item.price)}
                       </p>
-                      <div className={`flex items-center justify-end gap-1 text-sm font-medium mt-1 ${
-                        item.change >= 0 ? 'asset-profit' : 'asset-loss'
+                      <div className={`flex items-center justify-end gap-1 text-xs font-semibold mt-1 ${
+                        item.change >= 0 ? 'text-[#3bd187]' : 'text-[#ff6b6b]'
                       }`}>
                         <span>
                           {formatPercent(item.changePercent)}
@@ -317,7 +315,7 @@ export default function Home() {
         </div>
 
         {/* 快捷操作 - 极简4个 */}
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-4 gap-3">
           {[
             { label: '持仓', icon: <CalendarIcon size="18px" />, action: () => navigate('/position') },
             { label: '行情', icon: <ChartIcon size="18px" />, action: () => navigate('/market') },
@@ -327,13 +325,13 @@ export default function Home() {
             <button
               key={item.label}
               onClick={item.action}
-              className="bg-neutral-900 rounded p-3 border border-neutral-800 hover:border-neutral-700 transition-colors group"
+              className="bg-[#0f141b] rounded border border-[#1e2633] p-3 hover:border-[#2b394b] transition-colors group"
             >
               <div className="flex flex-col items-center gap-1">
-                <div className="text-neutral-500 group-hover:text-amber-500 transition-colors">
+                <div className="text-[#7a889c] group-hover:text-[#c9d4e5] transition-colors">
                   {item.icon}
                 </div>
-                <span className="text-xs text-neutral-400 group-hover:text-neutral-200 transition-colors font-medium">
+                <span className="text-xs text-[#9fb0c5] group-hover:text-[#e6edf7] transition-colors font-medium">
                   {item.label}
                 </span>
               </div>
@@ -344,3 +342,4 @@ export default function Home() {
     </div>
   );
 }
+
