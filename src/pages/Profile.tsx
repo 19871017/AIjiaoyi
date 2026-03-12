@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Badge, Dialog, MessagePlugin } from 'tdesign-react';
 import {
@@ -239,27 +239,6 @@ export default function Profile() {
             trendData={[]}
           />
 
-          {/* 后台管理入口（管理员可见） */}
-          <button
-            onClick={() => navigate('/admin')}
-            className="w-full bg-gradient-to-r from-amber-900/30 to-amber-800/30 border border-amber-700/50 rounded-xl p-4 flex items-center justify-between hover:from-amber-900/40 hover:to-amber-800/40 transition-all duration-200 group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-amber-600/20 border border-amber-600/40 rounded-xl flex items-center justify-center">
-                <SettingIcon size="24px" className="text-amber-500" />
-              </div>
-              <div className="text-left">
-                <h4 className="text-sm font-semibold text-white mb-1 group-hover:text-amber-200 transition-colors">
-                  后台管理
-                </h4>
-                <p className="text-[11px] text-neutral-500">系统管理 · 数据统计 · 用户管理</p>
-              </div>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-amber-600/20 flex items-center justify-center group-hover:bg-amber-600/30 transition-colors">
-              <ChevronRightIcon size="16px" className="text-amber-500 group-hover:translate-x-0.5 transition-transform" />
-            </div>
-          </button>
-
           {/* 快捷导航 */}
           <QuickNav
             activeKey={activeNav}
@@ -346,56 +325,6 @@ export default function Profile() {
             </div>
           )}
 
-          {activeNav === 'help' && (
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-amber-900/30 to-amber-800/30 border border-amber-700/50 rounded-xl p-6">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-amber-600/20 border border-amber-600/40 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-3xl">📚</span>
-                  </div>
-                  <h3 className="text-lg font-bold text-white mb-2">帮助中心</h3>
-                  <p className="text-sm text-neutral-400 mb-4">为您解答关于平台使用、交易、安全等各类问题</p>
-                  <button
-                    onClick={() => navigate('/help')}
-                    className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition-colors"
-                  >
-                    进入帮助中心
-                  </button>
-                </div>
-              </div>
-
-              <div className="bg-neutral-900/80 border border-neutral-800/80 rounded-xl p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-1 h-4 bg-amber-700 rounded-full" />
-                  <h3 className="text-sm font-bold text-white">快速导航</h3>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { icon: '🆕', label: '新手入门', desc: '注册与认证' },
-                    { icon: '📊', label: '交易功能', desc: '下单与操作' },
-                    { icon: '💼', label: '持仓管理', desc: '平仓与设置' },
-                    { icon: '🧠', label: '智能分析', desc: '策略与回测' },
-                    { icon: '💰', label: '资金管理', desc: '充值与提现' },
-                    { icon: '🔒', label: '账户安全', desc: '密码与验证' },
-                  ].map((item, index) => (
-                    <button
-                      key={index}
-                      onClick={() => navigate('/help')}
-                      className="bg-neutral-950/60 border border-neutral-800/80 rounded-xl p-4 text-left hover:bg-neutral-800/60 hover:border-amber-700/50 transition-all group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{item.icon}</span>
-                        <div>
-                          <div className="text-sm font-medium text-white group-hover:text-amber-200 transition-colors">{item.label}</div>
-                          <div className="text-xs text-neutral-500">{item.desc}</div>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* 退出登录按钮 */}
           <Button
@@ -448,3 +377,4 @@ export default function Profile() {
     </div>
   );
 }
+

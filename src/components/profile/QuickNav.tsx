@@ -1,4 +1,4 @@
-import { User, Lock, Bell, HelpCircle } from 'lucide-react';
+import { User, Lock, Bell } from 'lucide-react';
 
 interface NavItem {
   key: string;
@@ -55,5 +55,4 @@ export const defaultNavItems: NavItem[] = [
   { key: 'account', label: '账户管理', icon: <User size={20} /> },
   { key: 'security', label: '安全设置', icon: <Lock size={20} /> },
   { key: 'notice', label: '系统公告', icon: <Bell size={20} />, count: 2 },
-  { key: 'help', label: '帮助中心', icon: <HelpCircle size={20} /> },
 ];
