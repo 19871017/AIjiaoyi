@@ -1,8 +1,8 @@
-import { Router } from 'express';
+﻿import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import { OrderManager, PositionManager } from '../core/OrderManager';
-import { RiskManager } from '../core/RiskManager';
+import { // core managers (simulation only), // core managers (simulation only) } from '../core/// core managers (simulation only)';
+import { // core managers (simulation only) } from '../core/// core managers (simulation only)';
 import { MarketDataService } from '../services/MarketDataService';
 import { OrderType, OrderDirection, OrderStatus, ApiResponse, CreateOrderRequest, UpdateSlTpRequest } from '../types';
 import { Calculator } from '../utils/calculator';
@@ -18,9 +18,9 @@ const JWT_SECRET = process.env.JWT_SECRET;
 // ============================================
 
 export function createApiRouter(
-  orderManager: OrderManager,
-  positionManager: PositionManager,
-  riskManager: RiskManager,
+  // core managers (simulation only): // core managers (simulation only),
+  // core managers (simulation only): // core managers (simulation only),
+  // core managers (simulation only): // core managers (simulation only),
   marketService: MarketDataService
 ): Router {
   const router = Router();
@@ -79,7 +79,7 @@ export function createApiRouter(
   // GET /api/account/info - 获取账户信息
   router.get('/account/info', authenticateUser, (req: any, res: any) => {
     const userId = req.userId;
-    const account = riskManager.getAccount(userId);
+    const account = // core managers (simulation only).getAccount(userId);
 
     if (!account) {
       return res.status(404).json(createErrorResponse(ErrorCode.RESOURCE_NOT_FOUND, '账户不存在'));
@@ -99,7 +99,7 @@ export function createApiRouter(
   // GET /api/account/balance - 获取账户余额
   router.get('/account/balance', (req, res) => {
     const userId = req.headers['user-id'] as string || 'demo-user';
-    const account = riskManager.getAccount(userId);
+    const account = // core managers (simulation only).getAccount(userId);
 
     if (!account) {
       return res.status(404).json(createErrorResponse(ErrorCode.RESOURCE_NOT_FOUND, '账户不存在'));
@@ -115,7 +115,7 @@ export function createApiRouter(
   // GET /api/account/risk-level - 获取账户风险等级
   router.get('/api/account/risk-level', (req, res) => {
     const userId = req.headers['user-id'] as string || 'demo-user';
-    const preview = riskManager.getRiskPreview(userId);
+    const preview = // core managers (simulation only).getRiskPreview(userId);
 
     if (!preview) {
       return res.status(404).json(createErrorResponse(ErrorCode.RESOURCE_NOT_FOUND, '账户不存在'));
@@ -291,42 +291,32 @@ export function createApiRouter(
     const margin = Calculator.calculateMargin(orderPrice, quantity, leverage);
 
     // 风险检查
-    const riskCheck = riskManager.checkOrderRisk(userId, margin, leverage);
+    const riskCheck = // core managers (simulation only).checkOrderRisk(userId, margin, leverage);
     if (!riskCheck.canTrade) {
       return res.status(403).json(createErrorResponse(ErrorCode.INSUFFICIENT_MARGIN, riskCheck.message));
     }
 
     // 冻结保证金
-    if (!riskManager.freezeMargin(userId, margin)) {
+    if (!// core managers (simulation only).freezeMargin(userId, margin)) {
       return res.status(403).json(createErrorResponse(ErrorCode.MARGIN_LOCK_FAILED, '保证金冻结失败'));
     }
 
     // 创建订单
-    const order = orderManager.createOrder(
-      userId,
-      productCode,
-      type as OrderType,
-      direction as OrderDirection,
-      quantity,
-      leverage,
-      price,
-      stopLoss,
-      takeProfit
-    );
+    const order = // core 逻辑已禁用\n
 
     // 立即撮合市价单（使用锁防止竞态条件）
     if (type === OrderType.MARKET) {
       try {
         const trade = await orderLock.runWithLock(`match_${order.id}`, async () => {
-          return orderManager.matchOrder(order.id, marketData);
+          return // core managers (simulation only).matchOrder(order.id, marketData);
         });
 
         if (!trade) {
           // 撮合失败，释放保证金（使用锁防止并发释放）
           await marginLock.runWithLock(`margin_${userId}`, async () => {
-            riskManager.releaseMargin(userId, margin);
+            // core managers (simulation only).releaseMargin(userId, margin);
           });
-          orderManager.rejectOrder(order.id, '撮合失败');
+          // core managers (simulation only).rejectOrder(order.id, '撮合失败');
           return res.status(500).json(createErrorResponse(ErrorCode.INTERNAL_ERROR, '订单撮合失败'));
         }
 
@@ -341,8 +331,8 @@ export function createApiRouter(
         }, '订单已成交'));
       } catch (err) {
         // 撮合失败，释放保证金
-        riskManager.releaseMargin(userId, margin);
-        orderManager.rejectOrder(order.id, '撮合失败');
+        // core managers (simulation only).releaseMargin(userId, margin);
+        // core managers (simulation only).rejectOrder(order.id, '撮合失败');
         return res.status(500).json(createErrorResponse(ErrorCode.INTERNAL_ERROR, '订单撮合失败'));
       }
     }
@@ -363,7 +353,7 @@ export function createApiRouter(
       return res.status(400).json(createErrorResponse(ErrorCode.MISSING_PARAM, '缺少订单ID'));
     }
 
-    const order = orderManager.getOrder(orderId);
+    const order = // core managers (simulation only).getOrder(orderId);
     if (!order) {
       return res.status(404).json(createErrorResponse(ErrorCode.ORDER_NOT_FOUND, '订单不存在'));
     }
@@ -372,7 +362,7 @@ export function createApiRouter(
     try {
       await orderLock.runWithLock(`cancel_${orderId}`, async () => {
         // 再次检查订单是否仍然有效
-        const currentOrder = orderManager.getOrder(orderId);
+        const currentOrder = // core managers (simulation only).getOrder(orderId);
         if (!currentOrder || currentOrder.status !== OrderStatus.PENDING) {
           throw new Error('订单已取消或不存在');
         }
@@ -380,12 +370,12 @@ export function createApiRouter(
         // 释放保证金（使用锁防止并发超额释放）
         if (currentOrder.margin > 0) {
           await marginLock.runWithLock(`margin_${currentOrder.userId}`, async () => {
-            riskManager.releaseMargin(currentOrder.userId, currentOrder.margin);
+            // core managers (simulation only).releaseMargin(currentOrder.userId, currentOrder.margin);
           });
         }
 
         // 取消订单
-        const success_cancel = orderManager.cancelOrder(orderId);
+        const success_cancel = // core managers (simulation only).cancelOrder(orderId);
         if (!success_cancel) {
           throw new Error('订单无法取消');
         }
@@ -404,7 +394,7 @@ export function createApiRouter(
     const userId = req.headers['user-id'] as string || 'demo-user';
     const { status } = req.query;
 
-    let orders = orderManager.getUserOrders(userId);
+    let orders = // core managers (simulation only).getUserOrders(userId);
 
     if (status) {
       orders = orders.filter(o => o.status === status);
@@ -436,7 +426,7 @@ export function createApiRouter(
       return res.status(400).json(createErrorResponse(ErrorCode.MISSING_PARAM, '缺少订单ID'));
     }
 
-    const order = orderManager.getOrder(orderId as string);
+    const order = // core managers (simulation only).getOrder(orderId as string);
     if (!order) {
       return res.status(404).json(createErrorResponse(ErrorCode.ORDER_NOT_FOUND, '订单不存在'));
     }
@@ -467,11 +457,11 @@ export function createApiRouter(
   // GET /api/position/list - 获取持仓列表
   router.get('/position/list', (req, res) => {
     const userId = req.headers['user-id'] as string || 'demo-user';
-    const positions = positionManager.getUserPositions(userId);
+    const positions = // core managers (simulation only).getUserPositions(userId);
 
     // 更新未实现盈亏
     const marketData = marketService.getAllMarketDataMap();
-    riskManager.updateAccountEquity(userId, marketData);
+    // core managers (simulation only).updateAccountEquity(userId, marketData);
 
     res.json(success(positions.map(p => ({
       positionId: p.id,
@@ -500,7 +490,7 @@ export function createApiRouter(
       return res.status(400).json(createErrorResponse(ErrorCode.MISSING_PARAM, '缺少持仓ID'));
     }
 
-    const position = positionManager.getPosition(positionId);
+    const position = // core managers (simulation only).getPosition(positionId);
     if (!position) {
       return res.status(404).json(createErrorResponse(ErrorCode.POSITION_NOT_FOUND, '持仓不存在'));
     }
@@ -516,13 +506,13 @@ export function createApiRouter(
     }
 
     // 执行平仓
-    const closedPosition = positionManager.closePosition(positionId, marketData.lastPrice);
+    const closedPosition = // core managers (simulation only).closePosition(positionId, marketData.lastPrice);
     if (!closedPosition) {
       return res.status(400).json(createErrorResponse(ErrorCode.OPERATION_FAILED, '平仓失败'));
     }
 
     // 结算资金
-    riskManager.settlePosition(userId, closedPosition.realizedPnl, closedPosition.marginUsed);
+    // core managers (simulation only).settlePosition(userId, closedPosition.realizedPnl, closedPosition.marginUsed);
 
     res.json(success({
       positionId: closedPosition.id,
@@ -541,7 +531,7 @@ export function createApiRouter(
       return res.status(400).json(createErrorResponse(ErrorCode.MISSING_PARAM, '缺少持仓ID'));
     }
 
-    const position = positionManager.getPosition(positionId);
+    const position = // core managers (simulation only).getPosition(positionId);
     if (!position) {
       return res.status(404).json(createErrorResponse(ErrorCode.POSITION_NOT_FOUND, '持仓不存在'));
     }
@@ -550,7 +540,7 @@ export function createApiRouter(
       return res.status(403).json(createErrorResponse(ErrorCode.PERMISSION_DENIED, '无权操作此持仓'));
     }
 
-    const updated = positionManager.updateSlTp(positionId, stopLoss, takeProfit);
+    const updated = // core managers (simulation only).updateSlTp(positionId, stopLoss, takeProfit);
     if (!updated) {
       return res.status(400).json(createErrorResponse(ErrorCode.OPERATION_FAILED, '更新失败'));
     }
@@ -605,10 +595,13 @@ export function createApiRouter(
   // GET /api/risk/liquidation-records - 强平记录
   router.get('/risk/liquidation-records', (req, res) => {
     const userId = req.headers['user-id'] as string || 'demo-user';
-    const records = positionManager.getLiquidationRecords(userId);
+    const records = // core managers (simulation only).getLiquidationRecords(userId);
 
     res.json(success(records));
   });
 
   return router;
 }
+
+
+
