@@ -1,6 +1,5 @@
-import express from 'express';
+﻿import express from 'express';
 import logger from '../utils/logger';
-import fetch from 'node-fetch';
 import { query } from '../config/database';
 
 const router = express.Router();
@@ -49,7 +48,11 @@ router.post('/generate-summary', async (req: any, res: any) => {
       return res.status(400).json({ code: 400, message: 'AI配置不完整', data: null, timestamp: Date.now() });
     }
 
-    const prompt = `基于以下新闻与市场数据，输出趋势/支撑/阻力/风险/总结：\n\n新闻：${JSON.stringify(news || [])}\n\n市场：${JSON.stringify(market || [])}`;
+    const prompt = `基于以下新闻与市场数据，输出趋势/支撑/阻力/风险/总结：
+
+新闻：${JSON.stringify(news || [])}
+
+市场：${JSON.stringify(market || [])}`;
 
     const response = await fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
@@ -108,3 +111,4 @@ router.post('/generate-summary', async (req: any, res: any) => {
 });
 
 export default router;
+

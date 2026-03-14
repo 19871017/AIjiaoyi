@@ -207,12 +207,6 @@ export default function AgentLogin() {
             <span className="text-xl font-bold text-white">代理管理系统</span>
           </div>
 
-            <div className="mb-4 p-3 bg-yellow-900/30 border border-yellow-600/50 rounded-lg">
-              <p className="text-yellow-300 text-xs text-center">
-              </p>
-            </div>
-          )}
-
           {/* 登录卡片 */}
           <div className="bg-slate-900/80 backdrop-blur-sm rounded-2xl p-8 border border-slate-800 shadow-2xl">
             {/* 标题 */}
@@ -222,26 +216,25 @@ export default function AgentLogin() {
             </div>
 
             {/* 快速填充测试账号 */}
-              <div className="mb-6 p-4 bg-emerald-900/20 border border-emerald-700/50 rounded-lg">
-                <p className="text-emerald-300 text-xs mb-3 font-medium">点击快速填充测试账号：</p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => fillTestAccount('agent001')}
-                    className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs rounded-lg transition-colors"
-                  >
-                    总代理 (agent001)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fillTestAccount('agent002')}
-                    className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs rounded-lg transition-colors"
-                  >
-                    分代理 (agent002)
-                  </button>
-                </div>
+            <div className="mb-6 p-4 bg-emerald-900/20 border border-emerald-700/50 rounded-lg">
+              <p className="text-emerald-300 text-xs mb-3 font-medium">点击快速填充测试账号：</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => fillTestAccount('agent001')}
+                  className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs rounded-lg transition-colors"
+                >
+                  总代理 (agent001)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fillTestAccount('agent002')}
+                  className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs rounded-lg transition-colors"
+                >
+                  分代理 (agent002)
+                </button>
               </div>
-            )}
+            </div>
 
             {/* 表单 */}
             <form className="space-y-5">
@@ -276,15 +269,6 @@ export default function AgentLogin() {
                   prefixIcon={<LockOnIcon />}
                   className="!bg-slate-900/50 !border-slate-700 !text-white !py-2.5 focus:!border-emerald-500 focus:!ring-1 focus:!ring-emerald-500/20"
                 />
-              </div>
-
-              <div className="flex items-center gap-2">
-                
-              </div>
-
-              {/* 记住我 */}
-              <div className="flex items-center justify-between">
-                
               </div>
 
               {/* 登录按钮 */}

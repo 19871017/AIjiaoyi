@@ -74,7 +74,8 @@ export default function AdminPC() {
   const [positions, setPositions] = useState<any[]>([]);
   const [commissionRecords, setCommissionRecords] = useState<any[]>([]);
   const [commissionStats, setCommissionStats] = useState<any>({});
-  const [loading, setLoading] = useState(false);\n  const [permissions, setPermissions] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [permissions, setPermissions] = useState<string[]>([]);
 
   const [riskOverview, setRiskOverview] = useState<any>({});
   const [riskPositions, setRiskPositions] = useState<any[]>([]);
@@ -89,7 +90,9 @@ export default function AdminPC() {
   const [pendingWithdrawals, setPendingWithdrawals] = useState(0);
   const [users, setUsers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
-  const [finance, setFinance] = useState<any[]>([]);\n  const [auditLogs, setAuditLogs] = useState<any[]>([]);\n  const [alerts, setAlerts] = useState<any[]>([]);
+  const [finance, setFinance] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<any[]>([]);
 
   // 手续费设置状态
   const [feeSettings, setFeeSettings] = useState({
@@ -179,7 +182,32 @@ export default function AdminPC() {
     }
   };
 
-  \n  const loadAuditLogs = async () => {\n    try {\n      setLoading(true);\n      const data = await adminApi.audit.getLogs({ page: 1, pageSize: 50 });\n      setAuditLogs(data?.list || []);\n    } catch (error) {\n      Message.error('加载审计日志失败');\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  const loadAlerts = async () => {\n    try {\n      setLoading(true);\n      const data = await adminApi.audit.getAlerts({ page: 1, pageSize: 50 });\n      setAlerts(data?.list || []);\n    } catch (error) {\n      Message.error('加载告警失败');\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  const loadAnnouncements = async () => {
+  
+  const loadAuditLogs = async () => {
+    try {
+      setLoading(true);
+      const data = await adminApi.audit.getLogs({ page: 1, pageSize: 50 });
+      setAuditLogs(data?.list || []);
+    } catch (error) {
+      Message.error('加载审计日志失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadAlerts = async () => {
+    try {
+      setLoading(true);
+      const data = await adminApi.audit.getAlerts({ page: 1, pageSize: 50 });
+      setAlerts(data?.list || []);
+    } catch (error) {
+      Message.error('加载告警失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadAnnouncements = async () => {
     try {
       setLoading(true);
       const data = await adminApi.announcement.getList({ page: 1, pageSize: 20 });
@@ -249,7 +277,17 @@ export default function AdminPC() {
     }
   };
 
-  \n  const loadPermissions = async () => {\n    try {\n      const result = await adminApi.user.getPermissions();\n      setPermissions(result?.permissions || []);\n    } catch (error) {\n      Message.error('加载权限失败');\n    }\n  };\n\n  const loadDashboardData = async () => {
+  
+  const loadPermissions = async () => {
+    try {
+      const result = await adminApi.user.getPermissions();
+      setPermissions(result?.permissions || []);
+    } catch (error) {
+      Message.error('加载权限失败');
+    }
+  };
+
+  const loadDashboardData = async () => {
     try {
       setLoading(true);
       const stats = await adminApi.dashboard.getStats();
@@ -849,7 +887,8 @@ export default function AdminPC() {
         />
       </Card>
     </div>
-  );\nconst renderSettings = () => (
+  );
+const renderSettings = () => (
     <div className="space-y-6">
       <Card className="!border-0 !shadow-sm" title="基本设置">
         <div className="space-y-4 max-w-2xl">
@@ -1588,7 +1627,11 @@ export default function AdminPC() {
         return renderCommission();
       case 'risk':
         return renderRisk();
-      case 'settings':\n        return renderSettings();\n      case 'audit':\n        return renderAudit();\n      case 'announcements':
+      case 'settings':
+        return renderSettings();
+      case 'audit':
+        return renderAudit();
+      case 'announcements':
         return renderAnnouncements();
       default:
         return renderDashboard();
@@ -1687,6 +1730,7 @@ export default function AdminPC() {
     </div>
   );
 }
+
 
 
 

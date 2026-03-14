@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+﻿import { Router, Request, Response } from 'express';
 import { AIService } from '../../services/ai.service';
 
 const router = Router();
@@ -35,14 +35,18 @@ router.post('/chat', async (req: Request, res: Response) => {
             type: 'delta',
             content: chunk,
             finished: false
-          })}\n\n`);
+          })}
+
+`);
         },
         onEnd: () => {
           res.write(`data: ${JSON.stringify({
             type: 'done',
             content: '',
             finished: true
-          })}\n\n`);
+          })}
+
+`);
           res.end();
         }
       });
@@ -227,3 +231,4 @@ router.get('/history', async (req: Request, res: Response) => {
 });
 
 export default router;
+

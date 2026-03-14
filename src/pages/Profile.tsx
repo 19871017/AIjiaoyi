@@ -330,7 +330,11 @@ export default function Profile() {
               ))}
             </div>
           )}
+        </div>
+      </div>
 
+      <EditProfileDialog
+        visible={editProfileVisible}
         onClose={() => setEditProfileVisible(false)}
         userData={userData}
         onSave={handleProfileSave}

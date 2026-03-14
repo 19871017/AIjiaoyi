@@ -1,7 +1,9 @@
 ﻿import { Router, Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../services/auth.service';
 import { query } from '../config/database';
-import logger from '../utils/logger';\nimport { logAudit, logAlert } from '../utils/audit';\n
+import logger from '../utils/logger';
+import { logAudit, logAlert } from '../utils/audit';
+
 const defaultConfigs: { key: string; value: string; type: string; desc: string; isPublic: boolean }[] = [
   { key: 'MAINTENANCE_MODE', value: 'false', type: 'boolean', desc: '维护模式', isPublic: true },
   { key: 'ALLOW_REGISTER', value: 'true', type: 'boolean', desc: '允许注册', isPublic: true },
@@ -315,7 +317,26 @@ router.get('/dashboard/status', requirePermission('all'), async (req: Request, r
 /**
  * 获取用户列表
  */
-\n// 获取当前管理员权限\nrouter.get('/users/permissions', authenticateToken, async (req: Request, res: Response) => {\n  try {\n    const userId = req.user?.user_id;\n    const result = await query(\n      SELECT p.permission_code\n       FROM role_permissions rp\n       JOIN permissions p ON rp.permission_id = p.id\n       JOIN users u ON rp.role_id = u.role_id\n       WHERE u.id = ,\n      [userId]\n    );\n    res.json({ code: 0, message: 'Success', data: { permissions: result.rows.map(r => r.permission_code) }, timestamp: Date.now() });\n  } catch (error) {\n    res.status(500).json({ code: 500, message: 'Internal server error', data: null, timestamp: Date.now() });\n  }\n});\n\nrouter.get('/users', requirePermission('user:view'), async (req: Request, res: Response) => {
+
+// 获取当前管理员权限
+router.get('/users/permissions', requirePermission('user:view'), async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.user_id;
+    const result = await query(
+      `SELECT p.permission_code
+       FROM role_permissions rp
+       JOIN permissions p ON rp.permission_id = p.id
+       JOIN users u ON rp.role_id = u.role_id
+       WHERE u.id = $1`,
+      [userId]
+    );
+    res.json({ code: 0, message: 'Success', data: { permissions: result.rows.map(r => r.permission_code) }, timestamp: Date.now() });
+  } catch (error) {
+    res.status(500).json({ code: 500, message: 'Internal server error', data: null, timestamp: Date.now() });
+  }
+});
+
+router.get('/users', requirePermission('user:view'), async (req: Request, res: Response) => {
   try {
     const { page = 1, pageSize = 20, status, kyc_status, keyword } = req.query;
     const pageNum = parseInt(page as string);
@@ -2385,6 +2406,7 @@ router.post('/risk/force-close', requirePermission('risk:force_close'), async (r
 });
 
 export default router;
+
 
 
 

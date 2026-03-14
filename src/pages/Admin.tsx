@@ -29,7 +29,79 @@ import {
 import { formatCurrency, formatPrice } from '../utils/format';
 import { adminApi, settingsApi } from '../services/admin';
 
-export default function Admin() {\n  const loadSettings = async () => {\n    try {\n      const settings = await settingsApi.get();\n      setSystemSettings({\n        maintenanceMode: settings.MAINTENANCE_MODE === 'true' || settings.MAINTENANCE_MODE === true,\n        allowRegister: settings.ALLOW_REGISTER === 'true' || settings.ALLOW_REGISTER === true,\n        maxLeverage: parseFloat(settings.MAX_LEVERAGE) || 100,\n        minDeposit: parseFloat(settings.MIN_DEPOSIT) || 100,\n        minWithdraw: parseFloat(settings.MIN_WITHDRAW) || 100,\n        commissionRate: parseFloat(settings.COMMISSION_RATE) || 0.002,\n        platformFee: parseFloat(settings.PLATFORM_FEE) || 0.001,\n        aiBaseUrl: settings.AI_BASE_URL || '',\n        aiModelId: settings.AI_MODEL_ID || '',\n        aiApiKey: settings.AI_API_KEY || ''\n      });\n    } catch (error) {\n      Message.error('加载系统设置失败');\n    }\n  };\n\n  const saveSettings = async () => {\n    try {\n      await settingsApi.update({\n        MAINTENANCE_MODE: String(systemSettings.maintenanceMode),\n        ALLOW_REGISTER: String(systemSettings.allowRegister),\n        MAX_LEVERAGE: String(systemSettings.maxLeverage),\n        MIN_DEPOSIT: String(systemSettings.minDeposit),\n        MIN_WITHDRAW: String(systemSettings.minWithdraw),\n        COMMISSION_RATE: String(systemSettings.commissionRate),\n        PLATFORM_FEE: String(systemSettings.platformFee),\n        AI_BASE_URL: systemSettings.aiBaseUrl,\n        AI_MODEL_ID: systemSettings.aiModelId,\n        AI_API_KEY: systemSettings.aiApiKey\n      });\n      Message.success('系统设置已保存');\n    } catch (error) {\n      Message.error('保存系统设置失败');\n    }\n  };\n\n  useEffect(() => {\n    const loadData = async () => {\n      try {\n        const stats = await adminApi.dashboard.getStats();\n        setStats({\n          totalUsers: stats.total_users ?? 0,\n          activeUsers: stats.active_users ?? 0,\n          totalAgents: stats.total_agents ?? 0,\n          todayOrders: stats.today_orders ?? 0,\n          openPositions: stats.open_positions ?? 0,\n          totalVolume: stats.total_volume ?? 0,\n          totalBalance: stats.total_balance ?? 0,\n          todayProfit: stats.today_profit ?? 0\n        });\n\n        const usersResult = await adminApi.user.getList({ page: 1, pageSize: 20 });\n        setUsers(usersResult.list || []);\n\n        const ordersResult = await adminApi.order.getList({ page: 1, pageSize: 20 });\n        setOrders(ordersResult.list || []);\n\n        const financeResult = await adminApi.finance.getList({ page: 1, pageSize: 20 });\n        setTransactions(financeResult.list || []);\n\n        await loadSettings();\n      } catch (error) {\n        Message.error('加载后台数据失败');\n      }\n    };\n\n    loadData();\n  }, []);
+export default function Admin() {
+  const loadSettings = async () => {
+    try {
+      const settings = await settingsApi.get();
+      setSystemSettings({
+        maintenanceMode: settings.MAINTENANCE_MODE === 'true' || settings.MAINTENANCE_MODE === true,
+        allowRegister: settings.ALLOW_REGISTER === 'true' || settings.ALLOW_REGISTER === true,
+        maxLeverage: parseFloat(settings.MAX_LEVERAGE) || 100,
+        minDeposit: parseFloat(settings.MIN_DEPOSIT) || 100,
+        minWithdraw: parseFloat(settings.MIN_WITHDRAW) || 100,
+        commissionRate: parseFloat(settings.COMMISSION_RATE) || 0.002,
+        platformFee: parseFloat(settings.PLATFORM_FEE) || 0.001,
+        aiBaseUrl: settings.AI_BASE_URL || '',
+        aiModelId: settings.AI_MODEL_ID || '',
+        aiApiKey: settings.AI_API_KEY || ''
+      });
+    } catch (error) {
+      Message.error('加载系统设置失败');
+    }
+  };
+
+  const saveSettings = async () => {
+    try {
+      await settingsApi.update({
+        MAINTENANCE_MODE: String(systemSettings.maintenanceMode),
+        ALLOW_REGISTER: String(systemSettings.allowRegister),
+        MAX_LEVERAGE: String(systemSettings.maxLeverage),
+        MIN_DEPOSIT: String(systemSettings.minDeposit),
+        MIN_WITHDRAW: String(systemSettings.minWithdraw),
+        COMMISSION_RATE: String(systemSettings.commissionRate),
+        PLATFORM_FEE: String(systemSettings.platformFee),
+        AI_BASE_URL: systemSettings.aiBaseUrl,
+        AI_MODEL_ID: systemSettings.aiModelId,
+        AI_API_KEY: systemSettings.aiApiKey
+      });
+      Message.success('系统设置已保存');
+    } catch (error) {
+      Message.error('保存系统设置失败');
+    }
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const stats = await adminApi.dashboard.getStats();
+        setStats({
+          totalUsers: stats.total_users ?? 0,
+          activeUsers: stats.active_users ?? 0,
+          totalAgents: stats.total_agents ?? 0,
+          todayOrders: stats.today_orders ?? 0,
+          openPositions: stats.open_positions ?? 0,
+          totalVolume: stats.total_volume ?? 0,
+          totalBalance: stats.total_balance ?? 0,
+          todayProfit: stats.today_profit ?? 0
+        });
+
+        const usersResult = await adminApi.user.getList({ page: 1, pageSize: 20 });
+        setUsers(usersResult.list || []);
+
+        const ordersResult = await adminApi.order.getList({ page: 1, pageSize: 20 });
+        setOrders(ordersResult.list || []);
+
+        const financeResult = await adminApi.finance.getList({ page: 1, pageSize: 20 });
+        setTransactions(financeResult.list || []);
+
+        await loadSettings();
+      } catch (error) {
+        Message.error('加载后台数据失败');
+      }
+    };
+
+    loadData();
+  }, []);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
 
@@ -807,6 +879,7 @@ export default function Admin() {\n  const loadSettings = async () => {\n    try
     </div>
   );
 }
+
 
 
 
