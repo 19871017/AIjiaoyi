@@ -7,7 +7,7 @@ import { MarketDataService } from '../services/MarketDataService';
 import { OrderType, OrderDirection, OrderStatus, ApiResponse, CreateOrderRequest, UpdateSlTpRequest } from '../types';
 import { Calculator } from '../utils/calculator';
 import { orderLock, marginLock } from '../utils/lock';
-import logger from '../utils/logger';
+import logger from '../utils/logger';\nimport { query } from '../config/database';
 import { ErrorCode, createErrorResponse, createSuccessResponse } from '../utils/error-codes';
 
 // JWT密钥
@@ -602,6 +602,7 @@ export function createApiRouter(
 
   return router;
 }
+
 
 
 
