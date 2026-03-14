@@ -1,6 +1,6 @@
-import express from 'express';
+﻿import express from 'express';
 import bcrypt from 'bcryptjs';
-import logger from '../utils/logger';
+import logger from '../utils/logger';\nimport { logAudit, logAlert } from '../utils/audit';
 import { register as registerService, login as loginService, verifyToken, getUserById, changePassword as changePasswordService } from '../services/auth.service';
 import { query, findOne } from '../config/database';
 
@@ -85,9 +85,7 @@ router.post('/login', async (req: express.Request, res: express.Response) => {
         user_agent: req.headers['user-agent'] || ''
       });
 
-      clearLoginAttempts(clientIp);
-
-      res.json({
+      clearLoginAttempts(clientIp);\n      await logAudit({ userId: result.user?.id || null, action: 'login', module: 'auth', level: 'info', detail: { username }, ip: clientIp, userAgent: req.headers['user-agent'] || '' });\n      res.json({
         code: 0,
         message: '登录成功',
         data: {
@@ -99,8 +97,7 @@ router.post('/login', async (req: express.Request, res: express.Response) => {
         timestamp: Date.now()
       });
     } catch (error: any) {
-      const attempt = recordFailedAttempt(clientIp);
-      return res.status(401).json({
+      const attempt = recordFailedAttempt(clientIp);\n      await logAlert({ type: 'login_failed', level: 'warn', message: '登录失败', detail: { username, ip: clientIp } });\n      return res.status(401).json({
         code: 401,
         message: error.message || '用户名或密码错误',
         data: { remainingAttempts: attempt.remainingAttempts },
@@ -159,16 +156,7 @@ router.post('/register', async (req: express.Request, res: express.Response) => 
       });
     }
 
-    const user = await registerService({
-      username,
-      password,
-      security_code: securityCode,
-      phone,
-      email,
-      referral_code: agentCode
-    });
-
-    res.json({
+    const user = await registerService({\n      username,\n      password,\n      security_code: securityCode,\n      phone,\n      email,\n      referral_code: agentCode\n    });\n\n    await logAudit({ userId: user.id, action: 'register', module: 'auth', level: 'info', detail: { username, phone, email }, ip: req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || 'unknown', userAgent: req.headers['user-agent'] || '' });\n\n    res.json({
       code: 0,
       message: '注册成功',
       data: {
@@ -471,3 +459,7 @@ router.post('/reset-password', async (req: express.Request, res: express.Respons
 });
 
 export default router;
+
+
+
+

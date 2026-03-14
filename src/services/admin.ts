@@ -1,4 +1,4 @@
-// 后台管理API服务
+﻿// 后台管理API服务
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
@@ -392,7 +392,7 @@ export const announcementApi = {
   })
 };
 
-export const adminApi = {
+\nexport const auditApi = {\n  getLogs: (params?: { page?: number; pageSize?: number; module?: string; level?: string; userId?: string }) => {\n    const query = new URLSearchParams(params as any).toString();\n    return adminRequest<any>(/admin/audit-logs);\n  },\n  getAlerts: (params?: { page?: number; pageSize?: number; status?: string; level?: string; type?: string }) => {\n    const query = new URLSearchParams(params as any).toString();\n    return adminRequest<any>(/admin/alerts);\n  },\n  resolveAlert: (id: number) => adminRequest<any>(/admin/alerts//resolve, { method: 'POST' })\n};\n\nexport const adminApi = {
   dashboard: dashboardApi,
   user: userApi,
   order: orderApi,
@@ -404,7 +404,8 @@ export const adminApi = {
   commission: commissionApi,
   fees: feesApi,
   risk: riskApi,
-  announcement: announcementApi
+  announcement: announcementApi,\n  audit: auditApi
 };
 
 export default adminApi;
+

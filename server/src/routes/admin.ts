@@ -1,7 +1,7 @@
 ﻿import { Router, Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../services/auth.service';
 import { query } from '../config/database';
-import logger from '../utils/logger';\n
+import logger from '../utils/logger';\nimport { logAudit, logAlert } from '../utils/audit';\n
 const defaultConfigs: { key: string; value: string; type: string; desc: string; isPublic: boolean }[] = [
   { key: 'MAINTENANCE_MODE', value: 'false', type: 'boolean', desc: '维护模式', isPublic: true },
   { key: 'ALLOW_REGISTER', value: 'true', type: 'boolean', desc: '允许注册', isPublic: true },
@@ -2385,6 +2385,8 @@ router.post('/risk/force-close', requirePermission('risk:force_close'), async (r
 });
 
 export default router;
+
+
 
 
 

@@ -43,17 +43,18 @@ import { adminApi } from '../services/admin';
 
 // 菜单项配置
 const menuItems = [
-  { key: 'dashboard', icon: <DashboardIcon size="20px" />, label: '仪表盘' },
-  { key: 'users', icon: <UserIcon size="20px" />, label: '用户管理' },
-  { key: 'agents', icon: <UserIcon size="20px" />, label: '代理管理' },
-  { key: 'products', icon: <ShopIcon size="20px" />, label: '产品管理' },
-  { key: 'orders', icon: <ChartIcon size="20px" />, label: '订单管理' },
-  { key: 'positions', icon: <ChartIcon size="20px" />, label: '持仓管理' },
-  { key: 'finance', icon: <WalletIcon size="20px" />, label: '财务管理' },
-  { key: 'commission', icon: <WalletIcon size="20px" />, label: '分佣管理' },
-  { key: 'risk', icon: <SettingIcon size="20px" />, label: '风控管理' },
-  { key: 'announcements', icon: <SettingIcon size="20px" />, label: '公告管理' },
-  { key: 'settings', icon: <SettingIcon size="20px" />, label: '系统设置' }
+  { key: 'dashboard', icon: <DashboardIcon size="20px" />, label: '仪表盘', perm: 'dashboard:view' },
+  { key: 'users', icon: <UserIcon size="20px" />, label: '用户管理', perm: 'users:view' },
+  { key: 'agents', icon: <UserIcon size="20px" />, label: '代理管理', perm: 'agents:view' },
+  { key: 'products', icon: <ShopIcon size="20px" />, label: '产品管理', perm: 'products:view' },
+  { key: 'orders', icon: <ChartIcon size="20px" />, label: '订单管理', perm: 'orders:view' },
+  { key: 'positions', icon: <ChartIcon size="20px" />, label: '持仓管理', perm: 'positions:view' },
+  { key: 'finance', icon: <WalletIcon size="20px" />, label: '财务管理', perm: 'finance:view' },
+  { key: 'commission', icon: <WalletIcon size="20px" />, label: '分佣管理', perm: 'commission:view' },
+  { key: 'risk', icon: <SettingIcon size="20px" />, label: '风控管理', perm: 'risk:view' },
+  { key: 'announcements', icon: <SettingIcon size="20px" />, label: '公告管理', perm: 'content:view' },
+  { key: 'settings', icon: <SettingIcon size="20px" />, label: '系统设置', perm: 'settings:view' },
+  { key: 'audit', icon: <SettingIcon size="20px" />, label: '日志/告警', perm: 'logs:view' }
 ];
 
 export default function AdminPC() {
@@ -88,7 +89,7 @@ export default function AdminPC() {
   const [pendingWithdrawals, setPendingWithdrawals] = useState(0);
   const [users, setUsers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
-  const [finance, setFinance] = useState<any[]>([]);
+  const [finance, setFinance] = useState<any[]>([]);\n  const [auditLogs, setAuditLogs] = useState<any[]>([]);\n  const [alerts, setAlerts] = useState<any[]>([]);
 
   // 手续费设置状态
   const [feeSettings, setFeeSettings] = useState({
@@ -178,7 +179,7 @@ export default function AdminPC() {
     }
   };
 
-  const loadAnnouncements = async () => {
+  \n  const loadAuditLogs = async () => {\n    try {\n      setLoading(true);\n      const data = await adminApi.audit.getLogs({ page: 1, pageSize: 50 });\n      setAuditLogs(data?.list || []);\n    } catch (error) {\n      Message.error('加载审计日志失败');\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  const loadAlerts = async () => {\n    try {\n      setLoading(true);\n      const data = await adminApi.audit.getAlerts({ page: 1, pageSize: 50 });\n      setAlerts(data?.list || []);\n    } catch (error) {\n      Message.error('加载告警失败');\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  const loadAnnouncements = async () => {
     try {
       setLoading(true);
       const data = await adminApi.announcement.getList({ page: 1, pageSize: 20 });
@@ -794,12 +795,61 @@ export default function AdminPC() {
                 <Select.Option value="0">停用</Select.Option>
               </Select>
             </FormItem>
+            <FormItem label="置顶">
+              <Switch value={!!announceForm.is_pinned} onChange={(v) => setAnnounceForm({ ...announceForm, is_pinned: v })} />
+            </FormItem>
           </Form>
         </Dialog>
       </div>
     );
 
-const renderSettings = () => (
+
+  const renderAudit = () => (
+    <div className="space-y-6">
+      <Card className="!border-0 !shadow-sm" title="审计日志">
+        <Table
+          columns={[
+            { colKey: 'id', title: 'ID', width: 80 },
+            { colKey: 'user_id', title: '用户ID', width: 100 },
+            { colKey: 'module', title: '模块', width: 120 },
+            { colKey: 'action', title: '动作', minWidth: 120 },
+            { colKey: 'level', title: '级别', width: 80 },
+            { colKey: 'ip_address', title: 'IP', width: 140 },
+            { colKey: 'created_at', title: '时间', width: 180 }
+          ]}
+          data={auditLogs}
+          stripe
+          hover
+          size="small"
+        />
+      </Card>
+
+      <Card className="!border-0 !shadow-sm" title="告警列表">
+        <Table
+          columns={[
+            { colKey: 'id', title: 'ID', width: 80 },
+            { colKey: 'type', title: '类型', width: 120 },
+            { colKey: 'level', title: '级别', width: 80 },
+            { colKey: 'message', title: '消息', minWidth: 200 },
+            { colKey: 'status', title: '状态', width: 100, cell: (row: any) => (
+              <Tag theme={row.status === 1 ? 'success' : 'warning'}>{row.status === 1 ? '已处理' : '未处理'}</Tag>
+            ) },
+            { colKey: 'created_at', title: '时间', width: 180 },
+            { colKey: 'action', title: '操作', width: 120, cell: (row: any) => (
+              <Button size="small" variant="text" disabled={row.status === 1} onClick={async () => {
+                await adminApi.audit.resolveAlert(row.id);
+                await loadAlerts();
+              }}>标记已处理</Button>
+            ) }
+          ]}
+          data={alerts}
+          stripe
+          hover
+          size="small"
+        />
+      </Card>
+    </div>
+  );\nconst renderSettings = () => (
     <div className="space-y-6">
       <Card className="!border-0 !shadow-sm" title="基本设置">
         <div className="space-y-4 max-w-2xl">
@@ -1538,7 +1588,7 @@ const renderSettings = () => (
         return renderCommission();
       case 'risk':
         return renderRisk();
-      case 'settings':\n        return renderSettings();\n      case 'announcements':
+      case 'settings':\n        return renderSettings();\n      case 'audit':\n        return renderAudit();\n      case 'announcements':
         return renderAnnouncements();
       default:
         return renderDashboard();
@@ -1637,6 +1687,12 @@ const renderSettings = () => (
     </div>
   );
 }
+
+
+
+
+
+
 
 
 
