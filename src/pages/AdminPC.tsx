@@ -80,7 +80,7 @@ export default function AdminPC() {
   const [riskSettings, setRiskSettings] = useState<any>({});
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [announceModal, setAnnounceModal] = useState(false);
-  const [announceForm, setAnnounceForm] = useState<any>({ title: '', content: '', status: 1, id: null });
+  const [announceForm, setAnnounceForm] = useState<any>({ title: '', content: '', status: 1, is_pinned: false, id: null });
 
   const [dashboardStats, setDashboardStats] = useState<any[]>([]);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
@@ -191,7 +191,7 @@ export default function AdminPC() {
   };
 
   const editAnnouncement = (row: any) => {
-    setAnnounceForm({ id: row.id, title: row.title, content: row.content, status: row.status });
+    setAnnounceForm({ id: row.id, title: row.title, content: row.content, status: row.status, is_pinned: row.is_pinned });
     setAnnounceModal(true);
   };
 
@@ -222,7 +222,7 @@ export default function AdminPC() {
       }
       Message.success('保存成功');
       setAnnounceModal(false);
-      setAnnounceForm({ title: '', content: '', status: 1, id: null });
+      setAnnounceForm({ title: '', content: '', status: 1, is_pinned: false, id: null });
       await loadAnnouncements();
     } catch (error) {
       Message.error('保存失败');
@@ -753,13 +753,17 @@ export default function AdminPC() {
             columns={[
               { colKey: 'id', title: 'ID', width: 80 },
               { colKey: 'title', title: '标题', minWidth: 200 },
+              { colKey: 'is_pinned', title: '置顶', width: 80, cell: (row: any) => (
+                <Tag theme={row.is_pinned ? 'warning' : 'default'}>{row.is_pinned ? '置顶' : '普通'}</Tag>
+              ) },
               { colKey: 'status', title: '状态', width: 100, cell: (row: any) => (
                 <Tag theme={row.status === 1 ? 'success' : 'default'}>{row.status === 1 ? '启用' : '停用'}</Tag>
               ) },
               { colKey: 'created_at', title: '创建时间', width: 180 },
-              { colKey: 'action', title: '操作', width: 140, cell: (row: any) => (
+              { colKey: 'action', title: '操作', width: 160, cell: (row: any) => (
                 <div className="space-x-2">
                   <Button size="small" variant="text" onClick={() => editAnnouncement(row)}>编辑</Button>
+                  <Button size="small" variant="text" onClick={() => togglePin(row)}>{row.is_pinned ? '取消置顶' : '置顶'}</Button>
                   <Button size="small" variant="text" theme="danger" onClick={() => deleteAnnouncement(row.id)}>删除</Button>
                 </div>
               ) }
@@ -1633,6 +1637,9 @@ const renderSettings = () => (
     </div>
   );
 }
+
+
+
 
 
 

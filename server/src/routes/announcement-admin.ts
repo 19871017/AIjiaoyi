@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express';
+﻿import { Router, Request, Response, NextFunction } from 'express';
 import { query } from '../config/database';
 import { createErrorResponse, createSuccessResponse, ErrorCode } from '../utils/error-codes';
 import jwt from 'jsonwebtoken';
@@ -30,7 +30,7 @@ const router = Router();
 // 获取公告列表（后台）
 router.get('/admin/announcements', requirePermission('content:view'), async (req, res) => {
   try {
-    const { page = 1, pageSize = 20, status } = req.query as any;
+    const { page = 1, pageSize = 20, status, pinned } = req.query as any;
     const pageNum = parseInt(page as string);
     const pageSizeNum = parseInt(pageSize as string);
     const offset = (pageNum - 1) * pageSizeNum;
@@ -52,9 +52,9 @@ router.get('/admin/announcements', requirePermission('content:view'), async (req
     );
 
     const dataResult = await query(
-      `SELECT id, title, content, status, created_at
+      `SELECT id, title, content, status, is_pinned, created_at
        FROM announcements ${whereClause}
-       ORDER BY created_at DESC
+       ORDER BY is_pinned DESC, created_at DESC
        LIMIT $${idx++} OFFSET $${idx++}`,
       [...params, pageSizeNum, offset]
     );
@@ -74,16 +74,16 @@ router.get('/admin/announcements', requirePermission('content:view'), async (req
 // 新增公告
 router.post('/admin/announcements', requirePermission('content:create'), async (req, res) => {
   try {
-    const { title, content, status = 1 } = req.body;
+    const { title, content, status = 1, is_pinned = false } = req.body;
     if (!title || !content) {
       return res.status(400).json(createErrorResponse(ErrorCode.MISSING_PARAM, '标题与内容不能为空'));
     }
 
     const result = await query(
-      `INSERT INTO announcements (title, content, status)
-       VALUES ($1, $2, $3)
-       RETURNING id, title, content, status, created_at`,
-      [title, content, status]
+      `INSERT INTO announcements (title, content, status, is_pinned)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, title, content, status, is_pinned, created_at`,
+      [title, content, status, is_pinned]
     );
 
     res.json(createSuccessResponse(result.rows[0], '创建成功'));
@@ -96,16 +96,17 @@ router.post('/admin/announcements', requirePermission('content:create'), async (
 router.put('/admin/announcements/:id', requirePermission('content:update'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, content, status } = req.body;
+    const { title, content, status, is_pinned } = req.body;
 
     const result = await query(
       `UPDATE announcements
        SET title = COALESCE($1, title),
            content = COALESCE($2, content),
-           status = COALESCE($3, status)
-       WHERE id = $4
-       RETURNING id, title, content, status, created_at`,
-      [title, content, status, id]
+           status = COALESCE($3, status),
+           is_pinned = COALESCE($4, is_pinned)
+       WHERE id = $5
+       RETURNING id, title, content, status, is_pinned, created_at`,
+      [title, content, status, is_pinned, id]
     );
 
     if (result.rows.length === 0) {
@@ -130,3 +131,4 @@ router.delete('/admin/announcements/:id', requirePermission('content:delete'), a
 });
 
 export default router;
+
