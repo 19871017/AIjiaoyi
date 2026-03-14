@@ -315,7 +315,7 @@ router.get('/dashboard/status', requirePermission('all'), async (req: Request, r
 /**
  * 获取用户列表
  */
-router.get('/users', requirePermission('user:view'), async (req: Request, res: Response) => {
+\n// 获取当前管理员权限\nrouter.get('/users/permissions', authenticateToken, async (req: Request, res: Response) => {\n  try {\n    const userId = req.user?.user_id;\n    const result = await query(\n      SELECT p.permission_code\n       FROM role_permissions rp\n       JOIN permissions p ON rp.permission_id = p.id\n       JOIN users u ON rp.role_id = u.role_id\n       WHERE u.id = ,\n      [userId]\n    );\n    res.json({ code: 0, message: 'Success', data: { permissions: result.rows.map(r => r.permission_code) }, timestamp: Date.now() });\n  } catch (error) {\n    res.status(500).json({ code: 500, message: 'Internal server error', data: null, timestamp: Date.now() });\n  }\n});\n\nrouter.get('/users', requirePermission('user:view'), async (req: Request, res: Response) => {
   try {
     const { page = 1, pageSize = 20, status, kyc_status, keyword } = req.query;
     const pageNum = parseInt(page as string);
@@ -2385,6 +2385,7 @@ router.post('/risk/force-close', requirePermission('risk:force_close'), async (r
 });
 
 export default router;
+
 
 
 

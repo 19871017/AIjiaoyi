@@ -73,7 +73,7 @@ export default function AdminPC() {
   const [positions, setPositions] = useState<any[]>([]);
   const [commissionRecords, setCommissionRecords] = useState<any[]>([]);
   const [commissionStats, setCommissionStats] = useState<any>({});
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);\n  const [permissions, setPermissions] = useState<string[]>([]);
 
   const [riskOverview, setRiskOverview] = useState<any>({});
   const [riskPositions, setRiskPositions] = useState<any[]>([]);
@@ -248,7 +248,7 @@ export default function AdminPC() {
     }
   };
 
-  const loadDashboardData = async () => {
+  \n  const loadPermissions = async () => {\n    try {\n      const result = await adminApi.user.getPermissions();\n      setPermissions(result?.permissions || []);\n    } catch (error) {\n      Message.error('加载权限失败');\n    }\n  };\n\n  const loadDashboardData = async () => {
     try {
       setLoading(true);
       const stats = await adminApi.dashboard.getStats();
@@ -1563,7 +1563,7 @@ const renderSettings = () => (
 
         {/* 菜单列表 */}
         <div className="flex-1 overflow-y-auto py-4">
-          {menuItems.map((item) => (
+          {menuItems.filter(m => !m.perm || permissions.includes(m.perm)).map((item) => (
             <button
               key={item.key}
               onClick={() => setActiveMenu(item.key)}
@@ -1633,6 +1633,10 @@ const renderSettings = () => (
     </div>
   );
 }
+
+
+
+
 
 
 
