@@ -22,7 +22,7 @@ function isIpLocked(ip: string): boolean {
     return true;
   }
 
-  if (Date.now() - attempt.lastAttempt > 15 * 60 * 1000) {
+  if (Date.now() - attempt.lastAttempt > 1 * 60 * 1000) {
     loginAttempts.delete(ip);
     return false;
   }
@@ -36,8 +36,8 @@ function recordFailedAttempt(ip: string) {
   attempt.lastAttempt = Date.now();
 
   if (attempt.count >= 3) {
-    attempt.lockedUntil = Date.now() + 15 * 60 * 1000;
-    console.log(`[Auth] IP ${ip} 已被锁定15分钟`);
+    attempt.lockedUntil = Date.now() + 1 * 60 * 1000;
+    console.log(`[Auth] IP ${ip} 已被锁定1分钟`);
   }
 
   loginAttempts.set(ip, attempt);
@@ -475,6 +475,7 @@ router.post('/reset-password', async (req: express.Request, res: express.Respons
 });
 
 export default router;
+
 
 
 
