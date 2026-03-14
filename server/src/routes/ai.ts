@@ -70,25 +70,37 @@ router.post('/generate-summary', async (req: any, res: any) => {
     const data = await response.json();
     const content = data?.choices?.[0]?.message?.content || '';
 
+    const normalizeRisk = (value: any) => {
+      const v = String(value || '').toLowerCase();
+      if (['low', 'medium', 'high'].includes(v)) return v;
+      return 'medium';
+    };
+
+    const extractJson = (text: string) => {
+      if (!text) return '';
+      const cleaned = text.replace(/```json|```/g, '').trim();
+      const match = cleaned.match(/\{[\s\S]*\}/);
+      return match ? match[0] : cleaned;
+    };
+
     let parsed: any = null;
     try {
-      parsed = JSON.parse(content);
+      const jsonText = extractJson(content);
+      parsed = JSON.parse(jsonText);
     } catch {
       parsed = null;
     }
 
-    if (!parsed) {
-      parsed = {
-        trend: '震荡',
-        support: 0,
-        resistance: 0,
-        risk: 'medium',
-        summary: content || '暂无分析结果',
-        newsHighlight: ''
-      };
-    }
+    const safe = {
+      trend: parsed?.trend || '震荡',
+      support: Number(parsed?.support) || 0,
+      resistance: Number(parsed?.resistance) || 0,
+      risk: normalizeRisk(parsed?.risk),
+      summary: parsed?.summary || content || '暂无分析结果',
+      newsHighlight: parsed?.newsHighlight || ''
+    };
 
-    res.json({ code: 0, message: 'success', data: parsed, timestamp: Date.now() });
+    res.json({ code: 0, message: 'success', data: safe, timestamp: Date.now() });
   } catch (error) {
     logger.error('[AI] 生成分析失败:', error);
     res.status(500).json({ code: 500, message: '服务器内部错误', data: null, timestamp: Date.now() });
