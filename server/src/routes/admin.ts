@@ -1,7 +1,35 @@
-import { Router, Request, Response, NextFunction } from 'express';
+﻿import { Router, Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../services/auth.service';
 import { query } from '../config/database';
-import logger from '../utils/logger';
+import logger from '../utils/logger';\n
+const defaultConfigs: { key: string; value: string; type: string; desc: string; isPublic: boolean }[] = [
+  { key: 'MAINTENANCE_MODE', value: 'false', type: 'boolean', desc: '维护模式', isPublic: true },
+  { key: 'ALLOW_REGISTER', value: 'true', type: 'boolean', desc: '允许注册', isPublic: true },
+  { key: 'MAX_LEVERAGE', value: '100', type: 'number', desc: '最大杠杆', isPublic: false },
+  { key: 'MIN_DEPOSIT', value: '100', type: 'number', desc: '最小充值', isPublic: false },
+  { key: 'MIN_WITHDRAW', value: '100', type: 'number', desc: '最小提现', isPublic: false },
+  { key: 'COMMISSION_RATE', value: '0.0005', type: 'number', desc: '默认手续费率', isPublic: false },
+  { key: 'PLATFORM_FEE', value: '0.0002', type: 'number', desc: '平台费率', isPublic: false },
+  { key: 'AI_BASE_URL', value: 'https://api.example.com/v1', type: 'string', desc: 'AI Base URL', isPublic: false },
+  { key: 'AI_MODEL_ID', value: 'your-provider/model-id', type: 'string', desc: 'AI模型ID', isPublic: false },
+  { key: 'AI_API_KEY', value: '', type: 'string', desc: 'AI API Key', isPublic: false },
+  { key: 'RISK_FORCE_CLOSE_THRESHOLD', value: '90', type: 'number', desc: '强平阈值', isPublic: false },
+  { key: 'RISK_WARNING_THRESHOLD', value: '70', type: 'number', desc: '预警阈值', isPublic: false },
+  { key: 'RISK_CHECK_INTERVAL', value: '5', type: 'number', desc: '风控检查频率(秒)', isPublic: false }
+];
+
+async function ensureDefaultConfigs() {
+  for (const cfg of defaultConfigs) {
+    const exists = await query('SELECT 1 FROM system_configs WHERE config_key = $1', [cfg.key]);
+    if (exists.rows.length === 0) {
+      await query(
+        `INSERT INTO system_configs (config_key, config_value, config_type, description, is_public)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [cfg.key, cfg.value, cfg.type, cfg.desc, cfg.isPublic]
+      );
+    }
+  }
+}
 
 const router = Router();
 
@@ -2357,3 +2385,6 @@ router.post('/risk/force-close', requirePermission('risk:force_close'), async (r
 });
 
 export default router;
+
+
+
