@@ -1084,56 +1084,56 @@ const renderSettings = () => (
         <Table
           columns={[
             { colKey: 'id', title: 'ID', width: 60 },
-            { colKey: 'code', title: '产品代码', width: 100 },
+            { colKey: 'symbol', title: '产品代码', width: 100 },
             { colKey: 'name', title: '产品名称', width: 120 },
             {
-              colKey: 'type',
-              title: '类型',
-              cell: (row: any) => (
-                <Tag theme={row.type === 'FOREX' ? 'primary' : 'warning'}>
-                  {row.type === 'FOREX' ? '现货' : '期货'}
-                </Tag>
-              ),
-              width: 80
+              colKey: 'category_id',
+              title: '分类',
+              cell: (row: any) => row.category_id === 1 ? '贵金属' : row.category_id === 2 ? '贵金属期货' : row.category_id,
+              width: 120
             },
-            { colKey: 'category', title: '分类', width: 120 },
             {
-              colKey: 'pricePrecision',
+              colKey: 'tick_size',
               title: '价格精度',
-              cell: (row: any) => row.pricePrecision + '位',
+              cell: (row: any) => row.tick_size,
               width: 100
             },
             {
-              colKey: 'volumePrecision',
-              title: '数量精度',
-              cell: (row: any) => row.volumePrecision + '位',
-              width: 100
-            },
-            {
-              colKey: 'minVolume',
+              colKey: 'min_lot_size',
               title: '最小手数',
-              cell: (row: any) => row.minVolume,
+              cell: (row: any) => row.min_lot_size,
               width: 100
             },
             {
-              colKey: 'maxLeverage',
+              colKey: 'max_leverage',
               title: '最大杠杆',
-              cell: (row: any) => row.maxLeverage + 'x',
+              cell: (row: any) => row.max_leverage + 'x',
               width: 100
             },
             {
-              colKey: 'commissionRate',
-              title: '手续费率',
-              cell: (row: any) => (row.commissionRate * 100).toFixed(3) + '%',
+              colKey: 'commission',
+              title: '手续费',
+              cell: (row: any) => (Number(row.commission) * 100).toFixed(3) + '%',
               width: 100
             },
             {
               colKey: 'status',
               title: '状态',
               cell: (row: any) => (
-                row.status === 'active' ? <Tag theme="success">启用</Tag> : <Tag theme="danger">停用</Tag>
+                row.status === 1 ? <Tag theme="success">启用</Tag> : <Tag theme="danger">停用</Tag>
               ),
               width: 80
+            },
+            {
+              colKey: 'action',
+              title: '操作',
+              width: 150,
+              cell: (row: any) => (
+                <div className="space-x-2">
+                  <Button size="small" variant="text" icon={<EditIcon size="14px" />} onClick={() => Message.info('请在“系统设置 > 产品配置”里编辑')}>编辑</Button>
+                  <Button size="small" variant="text" theme="danger" icon={<DeleteIcon size="14px" />} onClick={() => Message.info('请在“系统设置 > 产品配置”里编辑')}>删除</Button>
+                </div>
+              )
             },
             {
               colKey: 'action',

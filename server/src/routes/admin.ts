@@ -388,7 +388,7 @@ router.get('/users', requirePermission('user:view'), async (req: Request, res: R
       code: 0,
       message: 'Success',
       data: {
-        data: dataResult.rows,
+        list: dataResult.rows,
         total,
         page: pageNum,
         pageSize: pageSizeNum,
@@ -1457,7 +1457,7 @@ router.get('/agents', requirePermission('agent:view'), async (req: Request, res:
       code: 0,
       message: 'Success',
       data: {
-        data: dataResult.rows,
+        list: dataResult.rows,
         total,
         page: pageNum,
         pageSize: pageSizeNum,

@@ -226,20 +226,20 @@ export const productApi = {
   getList: (params?: {
     status?: string;
     category?: string;
-  }) => adminRequest<any[]>('/products'),
+  }) => adminRequest<any[]>('/admin/settings/products'),
 
   // 获取产品详情
   getDetail: (productId: number) => adminRequest<any>(`/products/${productId}`),
 
-  // 创建产品
+  // 创建产品（后台暂未提供新建接口，前端按钮保留）
   create: (data: any) => adminRequest<any>('/products', {
     method: 'POST',
     body: JSON.stringify(data)
   }),
 
   // 更新产品
-  update: (productId: number, data: any) => adminRequest<any>(`/products/${productId}`, {
-    method: 'PUT',
+  update: (productId: number, data: any) => adminRequest<any>(`/admin/settings/products/${productId}`, {
+    method: 'PATCH',
     body: JSON.stringify(data)
   }),
 
