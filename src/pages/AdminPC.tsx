@@ -44,16 +44,16 @@ import { adminApi } from '../services/admin';
 // 菜单项配置
 const menuItems = [
   { key: 'dashboard', icon: <DashboardIcon size="20px" />, label: '仪表盘', perm: 'dashboard:view' },
-  { key: 'users', icon: <UserIcon size="20px" />, label: '用户管理', perm: 'users:view' },
-  { key: 'agents', icon: <UserIcon size="20px" />, label: '代理管理', perm: 'agents:view' },
+  { key: 'users', icon: <UserIcon size="20px" />, label: '用户管理', perm: 'user:view' },
+  { key: 'agents', icon: <UserIcon size="20px" />, label: '代理管理', perm: 'agent:view' },
   { key: 'products', icon: <ShopIcon size="20px" />, label: '产品管理', perm: 'products:view' },
-  { key: 'orders', icon: <ChartIcon size="20px" />, label: '订单管理', perm: 'orders:view' },
-  { key: 'positions', icon: <ChartIcon size="20px" />, label: '持仓管理', perm: 'positions:view' },
+  { key: 'orders', icon: <ChartIcon size="20px" />, label: '订单管理', perm: 'order:view' },
+  { key: 'positions', icon: <ChartIcon size="20px" />, label: '持仓管理', perm: 'position:view' },
   { key: 'finance', icon: <WalletIcon size="20px" />, label: '财务管理', perm: 'finance:view' },
   { key: 'commission', icon: <WalletIcon size="20px" />, label: '分佣管理', perm: 'commission:view' },
   { key: 'risk', icon: <SettingIcon size="20px" />, label: '风控管理', perm: 'risk:view' },
   { key: 'announcements', icon: <SettingIcon size="20px" />, label: '公告管理', perm: 'content:view' },
-  { key: 'settings', icon: <SettingIcon size="20px" />, label: '系统设置', perm: 'settings:view' },
+  { key: 'settings', icon: <SettingIcon size="20px" />, label: '系统设置', perm: 'config:view' },
   { key: 'audit', icon: <SettingIcon size="20px" />, label: '日志/告警', perm: 'logs:view' }
 ];
 
