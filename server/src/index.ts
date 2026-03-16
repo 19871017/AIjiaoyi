@@ -12,6 +12,7 @@ import { MarketDataService } from './services/MarketDataService';
 import { stopLossTakeProfitService } from './services/StopLossTakeProfitService';
 import { createApiRouter } from './routes/api';
 import { createShuhaiRouter } from './routes/shuhai';
+import { createFreeMarketRouter } from './routes/free-market-api';
 import authRouter from './routes/auth';
 import adminRouter from './routes/admin';
 import aiRouter from './routes/ai';
@@ -20,6 +21,8 @@ import bankCardRouter from './routes/bank-card';
 import announcementRouter from './routes/announcement';
 import announcementAdminRouter from './routes/announcement-admin';
 import profileRouter from './routes/profile';
+import productRouter from './routes/product';
+import commissionRouter from './routes/commission';
 
 dotenv.config();
 
@@ -182,11 +185,20 @@ app.use('/', announcementAdminRouter);
 // 个人信息
 app.use('/', profileRouter);
 
+// 产品
+app.use('/products', productRouter);
+
+// 分佣
+app.use('/commission', commissionRouter);
+
 // API 路由
 app.use('/api', createApiRouter(orderManager, positionManager, riskManager, marketService));
 
 // 数海行情代理路由
 app.use('/shuhai', createShuhaiRouter());
+
+// 免费行情代理路由
+app.use('/free', createFreeMarketRouter());
 
 // 错误处理
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

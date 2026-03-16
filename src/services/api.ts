@@ -3,7 +3,8 @@
 // ============================================
 
 // 从环境变量读取API地址，默认localhost
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+const API_PREFIX = '/api';
 
 // 统一请求封装
 import { getToken } from './auth';
@@ -45,14 +46,14 @@ export const accountApi = {
     unrealizedPnl: number;
     realizedPnl: number;
     riskLevel: 'SAFE' | 'WARNING' | 'DANGER';
-  }>('/account/info'),
+  }>(`${API_PREFIX}/account/info`),
 
   // 获取账户余额
   getBalance: () => request<{
     totalBalance: number;
     availableBalance: number;
     frozenMargin: number;
-  }>('/account/balance'),
+  }>(`${API_PREFIX}/account/balance`),
 
   // 获取风险等级
   getRiskLevel: () => request<{
@@ -70,7 +71,7 @@ export const accountApi = {
 export const marketApi = {
   // 获取行情
   getTicker: (product?: string) => request<any>(
-    product ? `/market/ticker?product=${product}` : '/market/ticker'
+    product ? `${API_PREFIX}/market/ticker?product=${product}` : `${API_PREFIX}/market/ticker`
   ),
 
   // 获取K线
@@ -104,7 +105,7 @@ export const orderApi = {
     marginUsed: number;
     fee?: number;
     tradeId?: string;
-  }>('/order/create', {
+  }>(`${API_PREFIX}/order/create`, {
     method: 'POST',
     body: JSON.stringify(params)
   }),
@@ -117,7 +118,7 @@ export const orderApi = {
 
   // 获取订单列表
   getList: (status?: string) => request<any[]>(
-    status ? `/order/list?status=${status}` : '/order/list'
+    status ? `${API_PREFIX}/order/list?status=${status}` : `${API_PREFIX}/order/list`
   ),
 
   // 获取订单详情
@@ -138,7 +139,7 @@ export const positionApi = {
     closePrice: number;
     realizedPnl: number;
     marginReleased: number;
-  }>('/position/close', {
+  }>(`${API_PREFIX}/position/close`, {
     method: 'POST',
     body: JSON.stringify({ positionId })
   }),
@@ -148,7 +149,7 @@ export const positionApi = {
     positionId: string;
     stopLoss?: number;
     takeProfit?: number;
-  }>('/position/update-sl-tp', {
+  }>(`${API_PREFIX}/position/update-sl-tp`, {
     method: 'POST',
     body: JSON.stringify({ positionId, stopLoss, takeProfit })
   })
@@ -229,7 +230,7 @@ export const riskApi = {
     marginRequired: number;
     liquidationPrice: number;
     maxLoss: number;
-  }>(`/risk/preview?productCode=${params.productCode}&price=${params.price}&quantity=${params.quantity}&leverage=${params.leverage}&direction=${params.direction}`),
+  }>(`${API_PREFIX}/risk/preview?productCode=${params.productCode}&price=${params.price}&quantity=${params.quantity}&leverage=${params.leverage}&direction=${params.direction}`),
 
   // 计算强平价
   getLiquidationPrice: (price: number, leverage: number, direction: 'LONG' | 'SHORT') => request<{
@@ -237,7 +238,7 @@ export const riskApi = {
   }>(`/risk/liquidation-price?price=${price}&leverage=${leverage}&direction=${direction}`),
 
   // 强平记录
-  getLiquidationRecords: () => request<any[]>('/risk/liquidation-records')
+  getLiquidationRecords: () => request<any[]>(`${API_PREFIX}/risk/liquidation-records`)
 };
 
 // 导出所有 API
