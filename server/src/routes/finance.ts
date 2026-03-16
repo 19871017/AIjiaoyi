@@ -10,7 +10,10 @@ import { getAccount } from '../services/finance.service';
 const router = express.Router();
 
 // JWT密钥强度验证（确保与auth.ts一致）
-const JWT_SECRET = process.env.JWT_SECRET || 'precious-metals-trading-secret-key-2024-secure-32chars';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not configured. Please set a strong secret key in environment variables.');
+}
 
 /**
  * JWT认证中间件

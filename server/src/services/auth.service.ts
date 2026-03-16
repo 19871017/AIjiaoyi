@@ -8,7 +8,11 @@ import logger from '../utils/logger';
  * JWT 配置
  */
 // JWT密钥强度验证
-const JWT_SECRET = process.env.JWT_SECRET || 'precious-metals-trading-secret-key-2024-secure-32chars';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not configured. Please set a strong secret key in environment variables.');
+}
 
 if (JWT_SECRET.length < 32) {
   logger.warn('JWT_SECRET is too short (less than 32 characters). Please use a stronger secret key for production.');
@@ -28,6 +32,7 @@ export interface User {
   status: number;
   kyc_status: number;
   role_id: number;
+  role?: string;
   agent_id?: number;
   referral_code?: string;
   avatar?: string;
@@ -189,9 +194,11 @@ export async function register(data: RegisterData): Promise<User> {
 export async function login(data: LoginData): Promise<TokenResponse> {
   // 查找用户
   const user = await findOne<User>(
-    `SELECT id, username, password_hash, phone, email, real_name, status, kyc_status,
-            role_id, agent_id, referral_code, avatar, created_at
-     FROM users WHERE username = $1 OR phone = $2 OR email = $3`,
+    `SELECT u.id, u.username, u.password_hash, u.phone, u.email, u.real_name, u.status, u.kyc_status,
+            u.role_id, r.code as role, u.agent_id, u.referral_code, u.avatar, u.created_at
+     FROM users u
+     LEFT JOIN roles r ON u.role_id = r.id
+     WHERE u.username = $1 OR u.phone = $2 OR u.email = $3`,
     [data.username, data.username, data.username]
   );
 
@@ -255,9 +262,11 @@ export async function refreshToken(refresh_token: string): Promise<TokenResponse
 
   // 获取用户信息
   const user = await findOne<User>(
-    `SELECT id, username, phone, email, real_name, status, kyc_status,
-            role_id, agent_id, referral_code, avatar, created_at
-     FROM users WHERE id = $1`,
+    `SELECT u.id, u.username, u.phone, u.email, u.real_name, u.status, u.kyc_status,
+            u.role_id, r.code as role, u.agent_id, u.referral_code, u.avatar, u.created_at
+     FROM users u
+     LEFT JOIN roles r ON u.role_id = r.id
+     WHERE u.id = $1`,
     [payload.user_id]
   );
 
@@ -289,9 +298,11 @@ export async function refreshToken(refresh_token: string): Promise<TokenResponse
  */
 export async function getUserById(user_id: number): Promise<User | null> {
   return await findOne<User>(
-    `SELECT id, username, phone, email, real_name, status, kyc_status,
-            role_id, agent_id, referral_code, avatar, created_at
-     FROM users WHERE id = $1`,
+    `SELECT u.id, u.username, u.phone, u.email, u.real_name, u.status, u.kyc_status,
+            u.role_id, r.code as role, u.agent_id, u.referral_code, u.avatar, u.created_at
+     FROM users u
+     LEFT JOIN roles r ON u.role_id = r.id
+     WHERE u.id = $1`,
     [user_id]
   );
 }

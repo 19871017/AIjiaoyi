@@ -19,7 +19,7 @@ const authenticateUser = (req: any, res: any, next: any) => {
     }
 
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    req.userId = decoded.userId || decoded.id;
+    req.userId = decoded.user_id || decoded.userId || decoded.id;
     next();
   } catch (error) {
     return res.status(401).json(createErrorResponse(ErrorCode.TOKEN_INVALID));

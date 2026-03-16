@@ -7,6 +7,7 @@ import { Calculator } from '../utils/calculator';
 import { orderLock, marginLock } from '../utils/lock';
 import logger from '../utils/logger';
 import { query } from '../config/database';
+import { getAccount } from '../services/finance.service';
 import { ErrorCode, createErrorResponse, createSuccessResponse } from '../utils/error-codes';
 
 // JWT密钥
@@ -53,7 +54,7 @@ export function createApiRouter(
 
       try {
         const decoded = jwt.verify(token, JWT_SECRET) as any;
-        req.userId = decoded.userId || decoded.id;
+        req.userId = decoded.user_id || decoded.userId || decoded.id;
         req.user = decoded;
         next();
       } catch (jwtError) {
@@ -76,56 +77,77 @@ export function createApiRouter(
   // ============================================
 
   // GET /api/account/info - 获取账户信息
-  router.get('/account/info', authenticateUser, (req: any, res: any) => {
-    const userId = req.userId;
-    const account: any = null;
+  router.get('/account/info', authenticateUser, async (req: any, res: any) => {
+    try {
+      const userId = req.userId;
+      const account: any = await getAccount(Number(userId));
 
-    if (!account) {
-      return res.status(404).json(createErrorResponse(ErrorCode.RESOURCE_NOT_FOUND, '账户不存在'));
+      if (!account) {
+        return res.status(404).json(createErrorResponse(ErrorCode.RESOURCE_NOT_FOUND, '账户不存在'));
+      }
+
+      res.json(success({
+        userId: account.user_id,
+        totalBalance: account.balance,
+        availableBalance: account.available_balance,
+        frozenMargin: account.frozen_margin,
+        unrealizedPnl: account.unrealized_pnl,
+        realizedPnl: account.realized_pl,
+        riskLevel: account.risk_level
+      }));
+    } catch (error) {
+      logger.error('[API] Get account info failed:', error);
+      return res.status(500).json(createErrorResponse(ErrorCode.INTERNAL_ERROR, '获取账户信息失败'));
     }
-
-    res.json(success({
-      userId: account.userId,
-      totalBalance: account.totalBalance,
-      availableBalance: account.availableBalance,
-      frozenMargin: account.frozenMargin,
-      unrealizedPnl: account.unrealizedPnl,
-      realizedPnl: account.realizedPnl,
-      riskLevel: account.riskLevel
-    }));
   });
 
   // GET /api/account/balance - 获取账户余额
-  router.get('/account/balance', (req, res) => {
-    const userId = req.headers['user-id'] as string || 'demo-user';
-    const account: any = null;
+  router.get('/account/balance', authenticateUser, async (req: any, res: any) => {
+    try {
+      const userId = req.userId;
+      const account: any = await getAccount(Number(userId));
 
-    if (!account) {
-      return res.status(404).json(createErrorResponse(ErrorCode.RESOURCE_NOT_FOUND, '账户不存在'));
+      if (!account) {
+        return res.status(404).json(createErrorResponse(ErrorCode.RESOURCE_NOT_FOUND, '账户不存在'));
+      }
+
+      res.json(success({
+        totalBalance: account.balance,
+        availableBalance: account.available_balance,
+        frozenMargin: account.frozen_margin
+      }));
+    } catch (error) {
+      logger.error('[API] Get account balance failed:', error);
+      return res.status(500).json(createErrorResponse(ErrorCode.INTERNAL_ERROR, '获取账户余额失败'));
     }
-
-    res.json(success({
-      totalBalance: account.totalBalance,
-      availableBalance: account.availableBalance,
-      frozenMargin: account.frozenMargin
-    }));
   });
 
   // GET /api/account/risk-level - 获取账户风险等级
-  router.get('/api/account/risk-level', (req, res) => {
-    const userId = req.headers['user-id'] as string || 'demo-user';
-    const preview: any = null;
+  router.get('/api/account/risk-level', authenticateUser, async (req: any, res: any) => {
+    try {
+      const userId = req.userId;
+      const account: any = await getAccount(Number(userId));
 
-    if (!preview) {
-      return res.status(404).json(createErrorResponse(ErrorCode.RESOURCE_NOT_FOUND, '账户不存在'));
+      if (!account) {
+        return res.status(404).json(createErrorResponse(ErrorCode.RESOURCE_NOT_FOUND, '账户不存在'));
+      }
+
+      const usedMargin = Number(account.frozen_margin ?? 0);
+      const availableBalance = Number(account.available_balance ?? 0);
+      const totalBalance = Number(account.balance ?? 0);
+      const equity = totalBalance + Number(account.unrealized_pnl ?? 0);
+      const marginUsage = totalBalance > 0 ? (usedMargin / totalBalance) * 100 : 0;
+
+      res.json(success({
+        riskLevel: account.risk_level ?? 0,
+        marginUsage,
+        equity,
+        unrealizedPnl: Number(account.unrealized_pnl ?? 0)
+      }));
+    } catch (error) {
+      logger.error('[API] Get account risk level failed:', error);
+      return res.status(500).json(createErrorResponse(ErrorCode.INTERNAL_ERROR, '获取账户风险等级失败'));
     }
-
-    res.json(success({
-      riskLevel: preview.riskLevel,
-      marginUsage: preview.marginUsage,
-      equity: preview.equity,
-      unrealizedPnl: preview.unrealizedPnl
-    }));
   });
 
   // ============================================
