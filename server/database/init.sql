@@ -579,7 +579,8 @@ INSERT INTO system_configs (config_key, config_value, config_type, description, 
 ('MIN_DEPOSIT', '100', 'number', '最小充值金额', true),
 ('MIN_WITHDRAW', '100', 'number', '最小提现金额', true),
 ('WITHDRAW_FEE_RATE', '0.005', 'number', '提现手续费率', true),
-('MAX_DAILY_WITHDRAW', '100000', 'number', '每日最大提现金额', false);
+('MAX_DAILY_WITHDRAW', '100000', 'number', '每日最大提现金额', false),
+('MARKET_API_BASE', 'http://ds.cnshuhai.com/stock.php', 'string', '行情 API Base URL', false);
 
 -- API 密钥管理表
 CREATE TABLE api_keys (

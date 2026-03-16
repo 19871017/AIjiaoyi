@@ -9,9 +9,9 @@ import https from 'https';
 // ============================================
 
 // 数海API配置（使用官方地址，直接访问无需代理）
-const SHUHAI_API_BASE = 'http://ds.cnshuhai.com/stock.php';
-const SHUHAI_USERNAME = 'wu123';
-const SHUHAI_PASSWORD = 'wu123';
+const SHUHAI_API_BASE = process.env.MARKET_API_BASE || 'http://ds.cnshuhai.com/stock.php';
+const SHUHAI_USERNAME = process.env.SHUHAI_USERNAME || 'wu123';
+const SHUHAI_PASSWORD = process.env.SHUHAI_PASSWORD || 'wu123';
 
 // 创建axios实例，禁用代理以避免407错误
 const shuhaiAxios = axios.create({

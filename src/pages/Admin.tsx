@@ -43,7 +43,8 @@ export default function Admin() {
         platformFee: parseFloat(settings.PLATFORM_FEE) || 0.001,
         aiBaseUrl: settings.AI_BASE_URL || '',
         aiModelId: settings.AI_MODEL_ID || '',
-        aiApiKey: settings.AI_API_KEY || ''
+        aiApiKey: settings.AI_API_KEY || '',
+        marketApiBase: settings.MARKET_API_BASE || ''
       });
     } catch (error) {
       Message.error('加载系统设置失败');
@@ -62,7 +63,8 @@ export default function Admin() {
         PLATFORM_FEE: String(systemSettings.platformFee),
         AI_BASE_URL: systemSettings.aiBaseUrl,
         AI_MODEL_ID: systemSettings.aiModelId,
-        AI_API_KEY: systemSettings.aiApiKey
+        AI_API_KEY: systemSettings.aiApiKey,
+        MARKET_API_BASE: systemSettings.marketApiBase
       });
       Message.success('系统设置已保存');
     } catch (error) {
@@ -143,7 +145,8 @@ export default function Admin() {
     platformFee: 0.001,
     aiBaseUrl: '',
     aiModelId: '',
-    aiApiKey: ''
+    aiApiKey: '',
+    marketApiBase: ''
   });
 
   // 计算统计数据
@@ -768,6 +771,17 @@ export default function Admin() {
                         type="password"
                         value={systemSettings.aiApiKey}
                         onChange={(v) => setSystemSettings({ ...systemSettings, aiApiKey: v as string })}
+                        style={{ width: 320 }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-b border-neutral-800">
+                      <div>
+                        <div className="text-sm text-neutral-200">行情 API Base URL</div>
+                        <div className="text-xs text-neutral-500">如：https://example.com/stock.php</div>
+                      </div>
+                      <Input
+                        value={systemSettings.marketApiBase}
+                        onChange={(v) => setSystemSettings({ ...systemSettings, marketApiBase: v as string })}
                         style={{ width: 320 }}
                       />
                     </div>

@@ -9,7 +9,7 @@ import { query, findOne, findMany, update } from '../config/database';
 // 数海行情 API 代理路由（数据库缓存）
 // ============================================
 
-const SHUHAI_API_BASE = 'http://ds.cnshuhai.com/stock.php';
+const SHUHAI_API_BASE = process.env.MARKET_API_BASE || 'http://ds.cnshuhai.com/stock.php';
 const SHUHAI_USERNAME = process.env.SHUHAI_USERNAME || 'wu123';
 const SHUHAI_PASSWORD = process.env.SHUHAI_PASSWORD || 'wu123';
 
