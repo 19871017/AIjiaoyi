@@ -64,7 +64,8 @@ declare global {
  */
 router.post('/deposit', authenticateUser, async (req: express.Request, res: express.Response) => {
   try {
-    const { userId, amount, method, bankAccount, bankName, accountName, usdtAddress, securityCode } = req.body;
+    const { amount, method, bankAccount, bankName, accountName, usdtAddress, securityCode } = req.body;
+    const userId = req.user?.user_id || req.user?.userId || req.user?.id;
 
     if (!userId || !amount || !method) {
       return res.status(400).json(createErrorResponse(ErrorCode.MISSING_PARAM));
@@ -124,7 +125,8 @@ router.post('/deposit', authenticateUser, async (req: express.Request, res: expr
  */
 router.post('/withdraw', authenticateUser, async (req: express.Request, res: express.Response) => {
   try {
-    const { userId, amount, method, bankAccount, bankName, accountName, usdtAddress, securityCode } = req.body;
+    const { amount, method, bankAccount, bankName, accountName, usdtAddress, securityCode } = req.body;
+    const userId = req.user?.user_id || req.user?.userId || req.user?.id;
 
     if (!userId || !amount || !method) {
       return res.status(400).json(createErrorResponse(ErrorCode.MISSING_PARAM));
@@ -231,7 +233,7 @@ router.post('/withdraw', authenticateUser, async (req: express.Request, res: exp
  */
 router.get('/account', authenticateUser, async (req: express.Request, res: express.Response) => {
   try {
-    const { userId } = req.query;
+    const userId = req.user?.user_id || req.user?.userId || req.user?.id;
 
     if (!userId) {
       return res.status(400).json(createErrorResponse(ErrorCode.MISSING_PARAM));
@@ -258,7 +260,8 @@ router.get('/account', authenticateUser, async (req: express.Request, res: expre
  */
 router.get('/records', authenticateUser, async (req: express.Request, res: express.Response) => {
   try {
-    const { userId, type, status, page = 1, pageSize = 20 } = req.query;
+    const { type, status, page = 1, pageSize = 20 } = req.query;
+    const userId = req.user?.user_id || req.user?.userId || req.user?.id;
 
     let whereClause = 'WHERE 1=1';
     const params: any[] = [];
@@ -323,10 +326,15 @@ router.get('/records', authenticateUser, async (req: express.Request, res: expre
 router.get('/records/:id', authenticateUser, async (req: express.Request, res: express.Response) => {
   try {
     const { id } = req.params;
+    const userId = req.user?.user_id || req.user?.userId || req.user?.id;
+
+    if (!userId) {
+      return res.status(400).json(createErrorResponse(ErrorCode.MISSING_PARAM));
+    }
 
     const record = await findOne(
-      `SELECT * FROM financial_records WHERE id = $1`,
-      [id]
+      `SELECT * FROM financial_records WHERE id = $1 AND user_id = $2`,
+      [id, userId]
     );
 
     if (!record) {
