@@ -703,8 +703,8 @@ export default function AdminPC() {
       </div>
       <Table
         columns={[
-          { colKey: 'id', title: '流水号', width: 150 },
-          { colKey: 'user', title: '用户', width: 100 },
+          { colKey: 'record_number', title: '流水号', width: 160 },
+          { colKey: 'user_display', title: '用户', width: 140 },
           {
             colKey: 'type',
             title: '类型',
@@ -722,16 +722,13 @@ export default function AdminPC() {
             width: 120
           },
           {
-            colKey: 'method',
+            colKey: 'payment_method_text',
             title: '方式',
-            cell: (row: any) => {
-              const methods: any = { bank: '银行卡', usdt: 'USDT', alipay: '支付宝' };
-              return methods[row.method] || row.method;
-            },
+            cell: (row: any) => row.payment_method_text || row.payment_method,
             width: 100
           },
           {
-            colKey: 'status',
+            colKey: 'status_text',
             title: '状态',
             cell: (row: any) => {
               const statusMap: any = {
@@ -745,16 +742,30 @@ export default function AdminPC() {
             },
             width: 100
           },
-          { colKey: 'time', title: '时间', width: 160 },
+          { colKey: 'created_at', title: '时间', width: 180 },
           {
             colKey: 'action',
             title: '操作',
-            width: 180,
+            width: 200,
             cell: (row: any) => (
-              row.status === 'pending' ? (
+              row.status_text === 'pending' ? (
                 <div className="space-x-2">
-                  <Button size="small" theme="success" variant="outline">通过</Button>
-                  <Button size="small" theme="danger" variant="outline">拒绝</Button>
+                  <Button size="small" theme="success" variant="outline" onClick={async () => {
+                    if (row.type === 'deposit') {
+                      await adminApi.finance.approveDeposit(String(row.id));
+                    } else {
+                      await adminApi.finance.approveWithdraw(String(row.id));
+                    }
+                    await loadFinanceData();
+                  }}>通过</Button>
+                  <Button size="small" theme="danger" variant="outline" onClick={async () => {
+                    if (row.type === 'deposit') {
+                      await adminApi.finance.rejectDeposit(String(row.id));
+                    } else {
+                      await adminApi.finance.rejectWithdraw(String(row.id));
+                    }
+                    await loadFinanceData();
+                  }}>拒绝</Button>
                 </div>
               ) : (
                 <Button size="small" variant="text" disabled>已处理</Button>
@@ -764,8 +775,8 @@ export default function AdminPC() {
         ]}
         data={finance.map((t: any) => ({
           ...t,
-          status: t.status_text || t.status,
-          payment_method: t.payment_method_text || t.payment_method
+          user_display: t.username || t.real_name || (t.user_id ? `用户#${t.user_id}` : ''),
+          status: t.status_text || t.status
         }))}
         stripe
         hover
